@@ -1,0 +1,15 @@
+.sidebar {
+    width: 200px;
+    background-color: #e2e8f0;
+    padding: 1rem;
+}
+
+.sidebar ul {
+    list-style: none;
+    padding: 0;
+}
+
+.sidebar li {
+    margin: 1rem 0;
+    cursor: pointer;
+}
