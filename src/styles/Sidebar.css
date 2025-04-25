@@ -10,6 +10,29 @@
 }
 
 .sidebar li {
-    margin: 1rem 0;
+    margin: 0.3rem 0;
     cursor: pointer;
+}
+
+
+.sidebar a {
+    color: #333;
+    text-decoration: none;
+    font-weight: 500;
+    display: block;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    transition: background-color 0.2s ease;
+}
+
+.sidebar a:hover {
+    background-color: #cbd5e0;
+    /* subtle hover background */
+    color: #1a202c;
+    /* slightly darker text on hover */
+    text-decoration: none;
+}
+
+.sidebar a:visited {
+    color: #333;
 }
