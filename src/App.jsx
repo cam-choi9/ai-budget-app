@@ -1,30 +1,27 @@
 import { Routes, Route, Navigate } from "react-router-dom";
-import Header from "./components/Header";
-import Sidebar from "./components/Sidebar";
-import Dashboard from "./components/Dashboard";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+import Dashboard from "./components/Dashboard";
 import Profile from "./pages/Profile";
+import Transactions from "./pages/Transactions";
 import PrivateRoute from "./components/PrivateRoute";
+import DashboardLayout from "./layouts/DashboardLayout";
 
 function App() {
   return (
     <Routes>
+      {/* Public Routes */}
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
 
-      {/* Protected Dashboard */}
+      {/* Protected Routes with Shared Layout */}
       <Route
         path="/dashboard"
         element={
           <PrivateRoute>
-            <div className="app-layout">
-              <Header />
-              <div className="main-content">
-                <Sidebar />
-                <Dashboard />
-              </div>
-            </div>
+            <DashboardLayout>
+              <Dashboard />
+            </DashboardLayout>
           </PrivateRoute>
         }
       />
@@ -33,18 +30,25 @@ function App() {
         path="/profile"
         element={
           <PrivateRoute>
-            <div className="app-layout">
-              <Header />
-              <div className="main-content">
-                <Sidebar />
-                <Profile />
-              </div>
-            </div>
+            <DashboardLayout>
+              <Profile />
+            </DashboardLayout>
           </PrivateRoute>
         }
       />
 
-      {/* Default route → redirect to login */}
+      <Route
+        path="/transactions"
+        element={
+          <PrivateRoute>
+            <DashboardLayout>
+              <Transactions />
+            </DashboardLayout>
+          </PrivateRoute>
+        }
+      />
+
+      {/* Default fallback route */}
       <Route path="*" element={<Navigate to="/login" />} />
     </Routes>
   );

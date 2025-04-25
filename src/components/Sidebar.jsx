@@ -10,7 +10,7 @@ function Sidebar() {
           <Link to="/dashboard">Dashboard</Link>
         </li>
         <li>
-          <Link to="/dashboard">Transactions</Link>
+          <Link to="/transactions">Transactions</Link>
         </li>
         <li>
           <Link to="/dashboard">Budget</Link>
