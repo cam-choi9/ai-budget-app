@@ -1,0 +1,72 @@
+.profile-container {
+    padding: 2rem;
+    /* 👈 same as .dashboard */
+    flex: 1;
+    /* 👈 grows to fill main content area */
+    max-width: 500px;
+    margin: 0 auto;
+    /* 👈 centers horizontally */
+    margin-top: 5rem;
+    /* 👈 vertical breathing space */
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+    font-family: Arial, sans-serif;
+}
+
+.profile-container h2 {
+    text-align: center;
+    font-size: 1.6rem;
+    margin-bottom: 2rem;
+    color: #2b6cb0;
+}
+
+.profile-container form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+}
+
+.profile-container input {
+    padding: 1rem;
+    font-size: 1rem;
+    border: 1px solid #d1d5db;
+    border-radius: 10px;
+    transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.profile-container input:focus {
+    outline: none;
+    border-color: #2b6cb0;
+    box-shadow: 0 0 0 3px rgba(43, 108, 176, 0.15);
+}
+
+.profile-container button {
+    padding: 1rem;
+    background-color: #2b6cb0;
+    color: white;
+    font-size: 1rem;
+    font-weight: bold;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background-color 0.2s ease-in-out;
+}
+
+.profile-container button:hover {
+    background-color: #2c5282;
+}
+
+.success {
+    margin-top: 1rem;
+    text-align: center;
+    color: #2f855a;
+    font-weight: 500;
+}
+
+.error {
+    margin-top: 1rem;
+    text-align: center;
+    color: #c53030;
+    font-weight: 500;
+}

@@ -4,6 +4,8 @@ import Sidebar from "./components/Sidebar";
 import Dashboard from "./components/Dashboard";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+import Profile from "./pages/Profile";
+import PrivateRoute from "./components/PrivateRoute";
 
 function App() {
   return (
@@ -11,17 +13,34 @@ function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
 
-      {/* Main app layout only visible after login */}
+      {/* Protected Dashboard */}
       <Route
         path="/dashboard"
         element={
-          <div className="app-layout">
-            <Header />
-            <div className="main-content">
-              <Sidebar />
-              <Dashboard />
+          <PrivateRoute>
+            <div className="app-layout">
+              <Header />
+              <div className="main-content">
+                <Sidebar />
+                <Dashboard />
+              </div>
             </div>
-          </div>
+          </PrivateRoute>
+        }
+      />
+
+      <Route
+        path="/profile"
+        element={
+          <PrivateRoute>
+            <div className="app-layout">
+              <Header />
+              <div className="main-content">
+                <Sidebar />
+                <Profile />
+              </div>
+            </div>
+          </PrivateRoute>
         }
       />
 
