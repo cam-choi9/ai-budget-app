@@ -1,0 +1,9 @@
+{
+  "projects": {
+    "default": "ai-budget-app-35941",
+    "ai-budget": "ai-budget-app-2025",
+    "ai-budget-app": "ai-budget-app-35941"
+  },
+  "targets": {},
+  "etags": {}
+}
