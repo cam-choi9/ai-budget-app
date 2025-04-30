@@ -1,11 +1,13 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
-import Dashboard from "./components/Dashboard";
+import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
 import Transactions from "./pages/Transactions";
 import PrivateRoute from "./components/PrivateRoute";
 import DashboardLayout from "./layouts/DashboardLayout";
+
+// console.log("🔥 Plaid Client ID:", import.meta.env.VITE_PLAID_CLIENT_ID);
 
 function App() {
   return (
