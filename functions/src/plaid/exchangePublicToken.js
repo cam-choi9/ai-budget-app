@@ -1,5 +1,5 @@
 import { onCall } from "firebase-functions/v2/https";
-import admin from "firebase-admin";
+import admin from "../utils/initFirebase.js";
 import { getPlaidClient } from "../utils/plaidClient.js";
 
 export const exchangePublicToken = onCall(
@@ -7,10 +7,11 @@ export const exchangePublicToken = onCall(
     region: "us-central1",
     secrets: ["PLAID_CLIENT_ID", "PLAID_SECRET"], // Load securely from Firebase Secret Manager
   },
-  async (data, context) => {
+  async (req) => {
+    const { auth, data } = req;
     const publicToken = data.public_token;
 
-    if (!context.auth) {
+    if (!auth) {
       throw new Error("User must be authenticated.");
     }
 
@@ -27,7 +28,7 @@ export const exchangePublicToken = onCall(
       await admin
         .firestore()
         .collection("users")
-        .doc(context.auth.uid)
+        .doc(auth.uid)
         .collection("plaid")
         .doc(itemId)
         .set({

@@ -1,9 +1,10 @@
 import "../styles/Dashboard.css";
 import PlaidLinkButton from "../components/PlaidLinkButton";
 import { getFunctions, httpsCallable } from "firebase/functions";
+import { getApp } from "firebase/app";
 
 function Dashboard() {
-  const functions = getFunctions();
+  const functions = getFunctions(getApp(), "us-central1");
   const exchangePublicToken = httpsCallable(functions, "exchangePublicToken");
 
   const handleSuccess = async (public_token, metadata) => {
