@@ -1,64 +1,45 @@
-const { onRequest } = require("firebase-functions/v2/https");
-const { Configuration, PlaidApi, PlaidEnvironments } = require("plaid");
+import { onRequest } from "firebase-functions/v2/https";
+import { getPlaidClient } from "../utils/plaidClient.js";
 
-exports.createLinkToken = onRequest(
+export const createLinkToken = onRequest(
   {
     region: "us-central1",
     memory: "512MiB",
     timeoutSeconds: 60,
-    secrets: ["PLAID_CLIENT_ID", "PLAID_SECRET"], // ✅ tell Firebase this function uses these secrets
+    secrets: ["PLAID_CLIENT_ID", "PLAID_SECRET"], // uses Firebase Secret Manager
   },
+
   async (req, res) => {
     console.log("[createLinkToken] Incoming request method:", req.method);
 
-    // ✅ Always set CORS headers manually
+    // ✅ Set CORS headers
     res.set("Access-Control-Allow-Origin", "*");
     res.set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
     res.set("Access-Control-Allow-Headers", "Content-Type");
 
-    // ✅ Preflight OPTIONS request
+    // ✅ Preflight OPTIONS check
     if (req.method === "OPTIONS") {
       res.status(204).send("");
       return;
     }
 
     try {
-      // ✅ Load from environment variables (Cloud Secrets)
-      const clientId = process.env.PLAID_CLIENT_ID || "MISSING_CLIENT_ID";
-      const secret = process.env.PLAID_SECRET || "MISSING_SECRET";
+      const plaidClient = getPlaidClient();
 
-      if (clientId === "MISSING_CLIENT_ID" || secret === "MISSING_SECRET") {
-        throw new Error("Missing Plaid credentials in environment variables.");
-      }
-
-      // ✅ Initialize Plaid API Client
-      const plaidClient = new PlaidApi(
-        new Configuration({
-          basePath: PlaidEnvironments.sandbox,
-          baseOptions: {
-            headers: {
-              "PLAID-CLIENT-ID": clientId,
-              "PLAID-SECRET": secret,
-            },
-          },
-        })
-      );
-
-      // ✅ Request Link Token from Plaid
       const response = await plaidClient.linkTokenCreate({
-        user: { client_user_id: "test-user-id" },
-        client_name: "AI Budget App",
+        user: { client_user_id: "test-user-id" }, // Later: use context.auth.uid
+        client_name: "Better & Better - AI Budget App",
         products: ["auth", "transactions"],
         country_codes: ["US"],
         language: "en",
       });
 
-      console.log("[createLinkToken] Link token created successfully.");
+      console.log("[createLinkToken] ✅ Link token created");
       res.status(200).json({ link_token: response.data.link_token });
     } catch (error) {
       console.error(
-        "[createLinkToken] Full error object:",
-        JSON.stringify(error, Object.getOwnPropertyNames(error))
+        "[createLinkToken] ❌ Error:",
+        error?.response?.data ?? error
       );
       res.status(500).json({ error: "Failed to create link token" });
     }
