@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { usePlaidLink } from "react-plaid-link";
 import { getLinkToken } from "../services/plaidService"; // 👈 import your service here
 
-export default function PlaidLinkButton() {
+export default function PlaidLinkButton({ onSuccessCallback }) {
   const [linkToken, setLinkToken] = useState(null);
 
   useEffect(() => {
@@ -16,9 +16,15 @@ export default function PlaidLinkButton() {
   const config = {
     token: linkToken,
     onSuccess: (public_token, metadata) => {
+      console.log("✅ Plaid Link onSuccess triggered");
       console.log("Public Token:", public_token);
       console.log("Metadata:", metadata);
-      // TODO: after this, we exchange public_token -> access_token via backend
+      if (onSuccessCallback) {
+        onSuccessCallback(public_token, metadata);
+      }
+    },
+    onExit: (err, metadata) => {
+      console.log("👋 Plaid Link exited", err, metadata);
     },
   };
 
