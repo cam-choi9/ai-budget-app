@@ -1,12 +1,17 @@
 import { onRequest } from "firebase-functions/v2/https";
+import { defineSecret } from "firebase-functions/params";
 import { getPlaidClient } from "../utils/plaidClient.js";
+
+// ✅ Define secrets
+const PLAID_CLIENT_ID = defineSecret("PLAID_CLIENT_ID");
+const PLAID_SECRET = defineSecret("PLAID_SECRET");
 
 export const createLinkToken = onRequest(
   {
     region: "us-central1",
     memory: "512MiB",
     timeoutSeconds: 60,
-    secrets: ["PLAID_CLIENT_ID", "PLAID_SECRET"], // uses Firebase Secret Manager
+    secrets: [PLAID_CLIENT_ID, PLAID_SECRET],
   },
 
   async (req, res) => {
@@ -17,17 +22,21 @@ export const createLinkToken = onRequest(
     res.set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
     res.set("Access-Control-Allow-Headers", "Content-Type");
 
-    // ✅ Preflight OPTIONS check
+    // ✅ Handle preflight OPTIONS request
     if (req.method === "OPTIONS") {
       res.status(204).send("");
       return;
     }
 
     try {
-      const plaidClient = getPlaidClient();
+      // ✅ Pass secrets into Plaid client
+      const plaidClient = getPlaidClient({
+        clientId: PLAID_CLIENT_ID.value(),
+        secret: PLAID_SECRET.value(),
+      });
 
       const response = await plaidClient.linkTokenCreate({
-        user: { client_user_id: "test-user-id" }, // Later: use context.auth.uid
+        user: { client_user_id: "test-user-id" }, // TODO: use req.auth.uid if secured
         client_name: "Better & Better - AI Budget App",
         products: ["auth", "transactions"],
         country_codes: ["US"],
