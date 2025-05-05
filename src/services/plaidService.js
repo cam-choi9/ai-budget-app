@@ -1,3 +1,6 @@
+import { httpsCallable } from "firebase/functions";
+import { functions } from "../firebase/firebase.js";
+
 export async function getLinkToken() {
   const url = "https://createlinktoken-6xfpnkvkoq-uc.a.run.app";
 
@@ -19,5 +22,17 @@ export async function getLinkToken() {
       error?.message ?? error
     );
     return null;
+  }
+}
+
+// Firebase Callable Function for getting accounts
+export async function fetchAccounts() {
+  try {
+    const getAccounts = httpsCallable(functions, "getAccounts");
+    const result = await getAccounts();
+    return result.data;
+  } catch (error) {
+    console.error("🔴 Error calling getAccounts:", error.message);
+    return { success: false, error: error.message };
   }
 }

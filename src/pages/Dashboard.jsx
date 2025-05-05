@@ -1,5 +1,6 @@
 import "../styles/Dashboard.css";
 import PlaidLinkButton from "../components/PlaidLinkButton";
+import AccountsDisplay from "../components/AccountsDisplay"; // ✅ Import new component
 import { getFunctions, httpsCallable } from "firebase/functions";
 import { getApp } from "firebase/app";
 
@@ -22,8 +23,11 @@ function Dashboard() {
   return (
     <div className="dashboard-page">
       <h1>Dashboard</h1>
-
       <PlaidLinkButton onSuccessCallback={handleSuccess} />
+
+      <div style={{ marginTop: "2rem" }}>
+        <AccountsDisplay /> {/* ✅ Show linked accounts */}
+      </div>
     </div>
   );
 }
