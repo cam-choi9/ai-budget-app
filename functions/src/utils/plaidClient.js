@@ -1,16 +1,17 @@
 import { Configuration, PlaidApi, PlaidEnvironments } from "plaid";
 
-// Accept secrets as parameters
-export function getPlaidClient({ clientId, secret }) {
-  return new PlaidApi(
-    new Configuration({
-      basePath: PlaidEnvironments.sandbox,
-      baseOptions: {
-        headers: {
-          "PLAID-CLIENT-ID": clientId,
-          "PLAID-SECRET": secret,
-        },
+export function getPlaidClient({ clientId, secret, useProd }) {
+  const config = new Configuration({
+    basePath: useProd
+      ? PlaidEnvironments.production
+      : PlaidEnvironments.sandbox,
+    baseOptions: {
+      headers: {
+        "PLAID-CLIENT-ID": clientId,
+        "PLAID-SECRET": secret,
       },
-    })
-  );
+    },
+  });
+
+  return new PlaidApi(config);
 }

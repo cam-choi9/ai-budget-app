@@ -8,7 +8,7 @@ const PLAID_SANDBOX_SECRET = defineSecret("PLAID_SANDBOX_SECRET");
 const PLAID_PROD_CLIENT_ID = defineSecret("PLAID_PROD_CLIENT_ID");
 const PLAID_PROD_SECRET = defineSecret("PLAID_PROD_SECRET");
 
-export const getAccounts = onCall(
+export const getInstitution = onCall(
   {
     cors: true,
     secrets: [
@@ -30,16 +30,16 @@ export const getAccounts = onCall(
         .collection("plaid_tokens")
         .get();
 
-      // ✅ Graceful exit if no banks linked
+      // ✅ Gracefully return empty list if no institutions linked
       if (tokenDocs.empty) {
         console.warn("No Plaid tokens found for user:", uid);
         return {
           success: true,
-          accounts: [],
+          institutions: [],
         };
       }
 
-      let allAccounts = [];
+      const institutions = [];
 
       for (const doc of tokenDocs.docs) {
         const { access_token, environment, item_id } = doc.data();
@@ -56,37 +56,31 @@ export const getAccounts = onCall(
           useProd: environment === "production",
         });
 
-        const response = await plaidClient.accountsGet({ access_token });
+        const itemRes = await plaidClient.itemGet({ access_token });
+        const institutionId = itemRes.data.item.institution_id;
 
-        // ✅ Inject item_id into each account object
-        const accountsWithItem = response.data.accounts.map((acc) => ({
-          ...acc,
-          item_id,
-        }));
-
-        // ✅ Save to environment-specific subcollection
-        const snapshotRef = admin
-          .firestore()
-          .collection("users")
-          .doc(uid)
-          .collection(`plaid_data_${environment}`)
-          .doc(item_id);
-
-        await snapshotRef.set({
-          fetchedAt: admin.firestore.FieldValue.serverTimestamp(),
-          accounts: accountsWithItem,
+        const instRes = await plaidClient.institutionsGetById({
+          institution_id: institutionId,
+          country_codes: ["US"],
         });
 
-        allAccounts.push(...accountsWithItem);
+        institutions.push({
+          item_id,
+          environment,
+          institution: instRes.data.institution,
+        });
       }
 
       return {
         success: true,
-        accounts: allAccounts,
+        institutions,
       };
     } catch (error) {
-      console.error("Error fetching accounts", { uid, error: error.message });
-      throw new Error("Failed to fetch accounts");
+      console.error(
+        "❌ Error fetching institution info",
+        error?.response?.data ?? error
+      );
+      throw new Error("Failed to fetch institutions");
     }
   }
 );

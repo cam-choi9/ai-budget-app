@@ -2,7 +2,8 @@ import { createLinkToken } from "./src/plaid/createLinkToken.js";
 import { exchangePublicToken } from "./src/plaid/exchangePublicToken.js";
 import { testAccountsGet } from "./src/plaid/testAccountsGet.js";
 import { plaidWebhook } from "./src/plaid/webhookReceiver.js";
-import { getAccounts } from "./src/plaid/getAccounts.js"; // ✅ NEW
+import { getAccounts } from "./src/plaid/getAccounts.js";
+import { getInstitution } from "./src/plaid/getInstitution.js";
 
 export {
   createLinkToken,
@@ -10,4 +11,5 @@ export {
   testAccountsGet,
   plaidWebhook,
   getAccounts,
+  getInstitution,
 };

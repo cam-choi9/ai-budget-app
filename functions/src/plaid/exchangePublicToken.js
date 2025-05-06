@@ -3,27 +3,40 @@ import { defineSecret } from "firebase-functions/params";
 import admin from "../utils/initFirebase.js";
 import { getPlaidClient } from "../utils/plaidClient.js";
 
-// Declare secrets
-const PLAID_CLIENT_ID = defineSecret("PLAID_CLIENT_ID");
-const PLAID_SECRET = defineSecret("PLAID_SECRET");
+// 🔐 Define secrets
+const PLAID_SANDBOX_CLIENT_ID = defineSecret("PLAID_SANDBOX_CLIENT_ID");
+const PLAID_SANDBOX_SECRET = defineSecret("PLAID_SANDBOX_SECRET");
+const PLAID_PROD_CLIENT_ID = defineSecret("PLAID_PROD_CLIENT_ID");
+const PLAID_PROD_SECRET = defineSecret("PLAID_PROD_SECRET");
 
 export const exchangePublicToken = onCall(
   {
     region: "us-central1",
-    secrets: [PLAID_CLIENT_ID, PLAID_SECRET],
+    secrets: [
+      PLAID_SANDBOX_CLIENT_ID,
+      PLAID_SANDBOX_SECRET,
+      PLAID_PROD_CLIENT_ID,
+      PLAID_PROD_SECRET,
+    ],
   },
   async (req) => {
     const { auth, data } = req;
     const publicToken = data.public_token;
+    const useProd = data.useProd === true;
 
-    if (!auth) {
-      throw new Error("User must be authenticated.");
+    if (!auth || !publicToken) {
+      throw new Error("Missing authentication or public_token");
     }
 
     try {
       const plaidClient = getPlaidClient({
-        clientId: PLAID_CLIENT_ID.value(),
-        secret: PLAID_SECRET.value(),
+        clientId: useProd
+          ? PLAID_PROD_CLIENT_ID.value()
+          : PLAID_SANDBOX_CLIENT_ID.value(),
+        secret: useProd
+          ? PLAID_PROD_SECRET.value()
+          : PLAID_SANDBOX_SECRET.value(),
+        useProd,
       });
 
       const response = await plaidClient.itemPublicTokenExchange({
@@ -33,20 +46,30 @@ export const exchangePublicToken = onCall(
       const accessToken = response.data.access_token;
       const itemId = response.data.item_id;
 
-      // ✅ Save access_token at users/{uid} for getAccounts.js to access
-      await admin.firestore().collection("users").doc(auth.uid).set(
-        {
+      await admin
+        .firestore()
+        .collection("users")
+        .doc(auth.uid)
+        .collection("plaid_tokens")
+        .doc(itemId)
+        .set({
           access_token: accessToken,
           item_id: itemId,
+          environment: useProd ? "production" : "sandbox",
           created_at: admin.firestore.FieldValue.serverTimestamp(),
-        },
-        { merge: true }
-      );
+        });
 
-      console.log("✅ Token exchanged and saved under users/" + auth.uid);
+      console.log(
+        `✅ Token exchanged and stored for ${auth.uid} (${
+          useProd ? "prod" : "sandbox"
+        })`
+      );
       return { item_id: itemId };
     } catch (error) {
-      console.error("❌ Token exchange error:", error?.response?.data ?? error);
+      console.error(
+        "❌ exchangePublicToken error:",
+        error?.response?.data ?? error
+      );
       throw new Error("Exchange failed");
     }
   }
