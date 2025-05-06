@@ -1,49 +1,63 @@
 import { onRequest } from "firebase-functions/v2/https";
 import { defineSecret } from "firebase-functions/params";
 import { getPlaidClient } from "../utils/plaidClient.js";
+import admin from "../utils/initFirebase.js";
 
-// ✅ Define secrets
-const PLAID_CLIENT_ID = defineSecret("PLAID_CLIENT_ID");
-const PLAID_SECRET = defineSecret("PLAID_SECRET");
+const PLAID_SANDBOX_CLIENT_ID = defineSecret("PLAID_SANDBOX_CLIENT_ID");
+const PLAID_SANDBOX_SECRET = defineSecret("PLAID_SANDBOX_SECRET");
+const PLAID_PROD_CLIENT_ID = defineSecret("PLAID_PROD_CLIENT_ID");
+const PLAID_PROD_SECRET = defineSecret("PLAID_PROD_SECRET");
 
 export const createLinkToken = onRequest(
   {
     region: "us-central1",
-    memory: "512MiB",
-    timeoutSeconds: 60,
-    secrets: [PLAID_CLIENT_ID, PLAID_SECRET],
+    secrets: [
+      PLAID_SANDBOX_CLIENT_ID,
+      PLAID_SANDBOX_SECRET,
+      PLAID_PROD_CLIENT_ID,
+      PLAID_PROD_SECRET,
+    ],
   },
-
   async (req, res) => {
-    console.log("[createLinkToken] Incoming request method:", req.method);
-
-    // ✅ Set CORS headers
     res.set("Access-Control-Allow-Origin", "*");
     res.set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-    res.set("Access-Control-Allow-Headers", "Content-Type");
+    res.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
 
-    // ✅ Handle preflight OPTIONS request
     if (req.method === "OPTIONS") {
       res.status(204).send("");
       return;
     }
 
     try {
-      // ✅ Pass secrets into Plaid client
+      const authHeader = req.headers.authorization;
+      let uid = "anonymous";
+
+      if (authHeader?.startsWith("Bearer ")) {
+        const token = authHeader.split("Bearer ")[1];
+        const decoded = await admin.auth().verifyIdToken(token);
+        uid = decoded.uid;
+      }
+
+      const useProd = req.query.env === "prod" || req.body?.env === "prod";
+
       const plaidClient = getPlaidClient({
-        clientId: PLAID_CLIENT_ID.value(),
-        secret: PLAID_SECRET.value(),
+        clientId: useProd
+          ? PLAID_PROD_CLIENT_ID.value()
+          : PLAID_SANDBOX_CLIENT_ID.value(),
+        secret: useProd
+          ? PLAID_PROD_SECRET.value()
+          : PLAID_SANDBOX_SECRET.value(),
+        useProd,
       });
 
       const response = await plaidClient.linkTokenCreate({
-        user: { client_user_id: "test-user-id" }, // TODO: use req.auth.uid if secured
-        client_name: "Better & Better - AI Budget App",
+        user: { client_user_id: uid }, // ✅ Dynamic ID for production
+        client_name: "AI Budget App",
         products: ["auth", "transactions"],
         country_codes: ["US"],
         language: "en",
       });
 
-      console.log("[createLinkToken] ✅ Link token created");
       res.status(200).json({ link_token: response.data.link_token });
     } catch (error) {
       console.error(

@@ -1,0 +1,59 @@
+.accounts-wrapper {
+    padding: 1rem;
+}
+
+.env-section {
+    margin-bottom: 2rem;
+}
+
+.env-label {
+    font-size: 1.2rem;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+}
+
+.institution-card {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    box-shadow: 1px 1px 5px rgba(0, 0, 0, 0.05);
+}
+
+.institution-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.institution-logo {
+    width: 32px;
+    height: 32px;
+    margin-right: 0.5rem;
+    border-radius: 4px;
+    background: #eee;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+}
+
+.account-list {
+    margin-left: 1rem;
+    border-left: 2px solid #ccc;
+    padding-left: 1rem;
+}
+
+.account-item {
+    margin-bottom: 1rem;
+}
+
+.account-item p {
+    margin: 0.2rem 0;
+}
+
+.no-accounts {
+    color: #888;
+    font-style: italic;
+    margin-top: 0.5rem;
+}

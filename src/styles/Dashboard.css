@@ -35,3 +35,11 @@
     border-radius: 6px;
     color: #2b6cb0;
 }
+
+.link-bank-message {
+    border: 1px dashed #999;
+    padding: 1rem;
+    border-radius: 6px;
+    background: #f9f9f9;
+    margin-bottom: 2rem;
+}
