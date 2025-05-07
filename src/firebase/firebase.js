@@ -3,6 +3,7 @@ import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getFunctions } from "firebase/functions";
 
+// 🔐 Firebase config from .env
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
@@ -12,16 +13,10 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
-// let app;
-// try {
-//   app = initializeApp(firebaseConfig);
-//   console.log("✅ Firebase initialized successfully");
-// } catch (error) {
-//   console.error("❌ Firebase initialization error:", error);
-// }
-
-const app = initializeApp(firebaseConfig);
-
+// 🚀 Initialize Firebase
+export const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
-export const functions = getFunctions(app); // ✅ Add this line
+
+// 🌐 Initialize callable functions in correct region
+export const functions = getFunctions(app, "us-central1");

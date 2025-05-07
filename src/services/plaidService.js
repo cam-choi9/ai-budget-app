@@ -1,6 +1,7 @@
 import { httpsCallable } from "firebase/functions";
-import { functions } from "../firebase/firebase.js";
+import { functions, db } from "../firebase/firebase.js";
 import { getAuth } from "firebase/auth";
+import { collection, getDocs } from "firebase/firestore";
 
 export async function getLinkToken() {
   const useProd = import.meta.env.VITE_USE_PROD === "true";
@@ -39,25 +40,44 @@ export async function getLinkToken() {
   }
 }
 
-// Firebase Callable Function for getting accounts
 export async function fetchAccounts() {
   try {
-    const getAccounts = httpsCallable(functions, "getAccounts");
-    const result = await getAccounts();
-    return result.data;
+    const user = getAuth().currentUser;
+    if (!user) throw new Error("User not authenticated");
+
+    const ref = collection(db, `users/${user.uid}/plaid_items`);
+    const snapshot = await getDocs(ref);
+
+    const accounts = [];
+    snapshot.forEach((doc) => {
+      const data = doc.data();
+      if (data.accounts?.length > 0) {
+        accounts.push({
+          institution: data.institution?.name ?? "Unknown Bank",
+          accounts: data.accounts.map((acc) => ({
+            name: acc.name,
+            mask: acc.mask,
+            subtype: acc.subtype,
+            balances: acc.balances, // ✅ include balances!
+          })),
+        });
+      }
+    });
+
+    return { success: true, accounts };
   } catch (error) {
-    console.error("🔴 Error calling getAccounts:", error.message);
+    console.error("🔴 Error fetching accounts from Firestore:", error.message);
     return { success: false, error: error.message };
   }
 }
 
-export async function fetchInstitution() {
+export async function fetchTransactions() {
   try {
-    const getInstitution = httpsCallable(functions, "getInstitution");
-    const result = await getInstitution();
-    return result.data;
+    const getTransactions = httpsCallable(functions, "getTransactions");
+    const result = await getTransactions();
+    return result.data.transactions;
   } catch (error) {
-    console.error("🔴 Error fetching institution info:", error.message);
-    return { success: false, error: error.message };
+    console.error("🔴 Error fetching transactions:", error.message);
+    return [];
   }
 }

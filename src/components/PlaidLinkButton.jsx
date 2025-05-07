@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { usePlaidLink } from "react-plaid-link";
-import { getLinkToken } from "../services/plaidService"; // 👈 import your service here
+import { getLinkToken } from "../services/plaidService";
+import { getFunctions, httpsCallable } from "firebase/functions";
+import { getApp } from "firebase/app";
 
 export default function PlaidLinkButton({ onSuccessCallback }) {
   const [linkToken, setLinkToken] = useState(null);
@@ -13,14 +15,28 @@ export default function PlaidLinkButton({ onSuccessCallback }) {
     fetchLinkToken();
   }, []);
 
+  const functions = getFunctions(getApp(), "us-central1");
+  const exchangePublicToken = httpsCallable(functions, "exchangePublicToken");
+
   const config = {
     token: linkToken,
-    onSuccess: (public_token, metadata) => {
+    onSuccess: async (public_token, metadata) => {
       console.log("✅ Plaid Link onSuccess triggered");
       console.log("Public Token:", public_token);
       console.log("Metadata:", metadata);
-      if (onSuccessCallback) {
-        onSuccessCallback(public_token, metadata);
+
+      try {
+        const result = await exchangePublicToken({
+          public_token,
+          useProd: import.meta.env.VITE_USE_PROD === "true",
+        });
+        console.log("✅ Token exchanged and stored:", result.data);
+
+        if (onSuccessCallback) {
+          onSuccessCallback(public_token, metadata);
+        }
+      } catch (err) {
+        console.error("❌ Failed to exchange token:", err.message);
       }
     },
     onExit: (err, metadata) => {
