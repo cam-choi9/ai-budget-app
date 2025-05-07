@@ -40,20 +40,31 @@ export const createLinkToken = onRequest(
 
       const useProd = req.query.env === "prod" || req.body?.env === "prod";
 
+      const clientId = useProd
+        ? PLAID_PROD_CLIENT_ID.value()
+        : PLAID_SANDBOX_CLIENT_ID.value();
+      const secret = useProd
+        ? PLAID_PROD_SECRET.value()
+        : PLAID_SANDBOX_SECRET.value();
+
+      // console.log("🛠️ useProd:", useProd);
+      // console.log("🛠️ clientId:", clientId);
+      // console.log("🛠️ secret:", secret);
+
+      if (!clientId || !secret) {
+        throw new Error("Plaid credentials are undefined");
+      }
+
       const plaidClient = getPlaidClient({
-        clientId: useProd
-          ? PLAID_PROD_CLIENT_ID.value()
-          : PLAID_SANDBOX_CLIENT_ID.value(),
-        secret: useProd
-          ? PLAID_PROD_SECRET.value()
-          : PLAID_SANDBOX_SECRET.value(),
+        clientId,
+        secret,
         useProd,
       });
 
       const response = await plaidClient.linkTokenCreate({
         user: { client_user_id: uid }, // ✅ Dynamic ID for production
         client_name: "AI Budget App",
-        products: ["auth", "transactions"],
+        products: ["transactions"],
         country_codes: ["US"],
         language: "en",
       });
