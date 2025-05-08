@@ -4,6 +4,7 @@ import { testAccountsGet } from "./src/plaid/testAccountsGet.js";
 import { plaidWebhook } from "./src/plaid/webhookReceiver.js";
 import { getAccounts } from "./src/plaid/getAccounts.js";
 import { getInstitution } from "./src/plaid/getInstitution.js";
+import { storePlaidTransactions } from "./src/plaid/storePlaidTransactions.js";
 
 export {
   createLinkToken,
@@ -12,4 +13,5 @@ export {
   plaidWebhook,
   getAccounts,
   getInstitution,
+  storePlaidTransactions,
 };

@@ -58,7 +58,7 @@ export async function fetchAccounts() {
             name: acc.name,
             mask: acc.mask,
             subtype: acc.subtype,
-            balances: acc.balances, // ✅ include balances!
+            balances: acc.balances,
           })),
         });
       }
@@ -71,13 +71,14 @@ export async function fetchAccounts() {
   }
 }
 
-export async function fetchTransactions() {
+export async function storePlaidTransactions() {
   try {
-    const getTransactions = httpsCallable(functions, "getTransactions");
-    const result = await getTransactions();
-    return result.data.transactions;
+    const fn = httpsCallable(functions, "storePlaidTransactions");
+    const result = await fn();
+    console.log("✅ Transactions stored:", result.data.count);
+    return result.data;
   } catch (error) {
-    console.error("🔴 Error fetching transactions:", error.message);
-    return [];
+    console.error("❌ Error storing transactions:", error.message);
+    throw error;
   }
 }
