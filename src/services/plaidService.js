@@ -82,3 +82,9 @@ export async function storePlaidTransactions() {
     throw error;
   }
 }
+
+export async function refreshBalances() {
+  const fn = httpsCallable(functions, "refreshAccountBalances");
+  const result = await fn();
+  return result.data;
+}

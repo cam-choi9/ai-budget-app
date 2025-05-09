@@ -1,72 +1,132 @@
 import React, { useEffect, useState } from "react";
-import { fetchRealTransactions } from "../firebase/firestore";
+import {
+  fetchRealTransactions,
+  fetchLatestAccountBalances,
+} from "../firebase/firestore";
 import "../styles/TransactionTable.css";
 
 function TransactionTable() {
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [accountTypes, setAccountTypes] = useState({});
 
   useEffect(() => {
-    fetchRealTransactions()
-      .then((data) => {
-        console.log("🔥 Transactions fetched:", data);
-        computeBacktrackedBalances(data);
-      })
-      .catch((err) => {
-        console.error("❌ Failed to fetch transactions:", err.message);
-      })
-      .finally(() => setLoading(false));
-  }, []);
-
-  const computeBacktrackedBalances = (txs) => {
-    const sorted = [...txs].sort((a, b) => new Date(b.date) - new Date(a.date)); // newest → oldest
-
-    const balances = {};
-    const accountTypes = {};
-
-    // Initialize current known balances
-    for (const tx of sorted) {
-      const acc = tx.account_name || "Unknown";
-
-      if (!(acc in balances)) {
-        const current = Number(tx?.balances?.current);
-        balances[acc] = isNaN(current) ? 0 : current;
-        accountTypes[acc] =
-          tx.subtype === "credit" || tx.account_type === "credit"
-            ? "credit"
-            : "bank";
+    async function loadData() {
+      try {
+        const [txs, latestBalances] = await Promise.all([
+          fetchRealTransactions(),
+          fetchLatestAccountBalances(),
+        ]);
+        console.log("🔥 Transactions fetched:", txs);
+        console.log("🏦 Latest account balances:", latestBalances);
+        computeSnapshots(txs, latestBalances);
+      } catch (err) {
+        console.error("❌ Failed to load data:", err.message);
+      } finally {
+        setLoading(false);
       }
     }
 
-    // Process each transaction in descending order (latest → oldest)
-    const withSnapshots = sorted.map((tx) => {
-      const acc = tx.account_name || "Unknown";
-      const isCredit = accountTypes[acc] === "credit";
-      const amount = Number(tx.amount) || 0;
+    loadData();
+  }, []);
 
-      // Reverse this transaction to get previous balance
-      if (tx.type === "expense") {
-        balances[acc] += isCredit ? -amount : amount;
-      } else if (tx.type === "revenue") {
-        balances[acc] += isCredit ? amount : -amount;
+  const format = (value, isCredit = false) => {
+    let num = Number(value);
+    if (isCredit && num > 0) num = Math.abs(num); // Show as positive unless overpaid
+    const fixed = num.toFixed(2);
+    return `$${fixed.startsWith("-0.00") ? "0.00" : fixed}`;
+  };
+
+  const computeSnapshots = (txs, latestBalances) => {
+    const sorted = [...txs].sort((a, b) => new Date(b.date) - new Date(a.date));
+    const balances = {};
+    const types = {};
+    const result = [];
+
+    for (const tx of sorted) {
+      const acc = tx.account_name || "Unknown";
+      const subtype = tx.subtype || tx.account_type || "other";
+
+      if (!(acc in types)) {
+        types[acc] =
+          subtype.includes("credit") || subtype === "credit"
+            ? "credit"
+            : subtype.includes("checking") || subtype === "checking"
+            ? "checking"
+            : "other";
       }
 
-      // 🧠 This is the balance AFTER reversing (i.e., balance *at* the time of this transaction)
-      const snapshot = { ...balances };
+      if (!(acc in balances)) {
+        const fallback = 0;
+        const latest = latestBalances[acc];
+        balances[acc] = typeof latest === "number" ? latest : fallback;
+      }
+    }
 
-      return { ...tx, balance_after: snapshot };
-    });
+    setAccountTypes(types);
 
-    // Set transactions in same order as original (most recent first)
-    setTransactions(withSnapshots);
+    for (const tx of sorted) {
+      const acc = tx.account_name || "Unknown";
+      const type = types[acc];
+      const isCredit = type === "credit";
+      const amount = Number(tx.amount) || 0;
+
+      const current = balances[acc];
+      let previous = current;
+
+      if (tx.type === "expense") {
+        previous = isCredit ? current - amount : current + amount;
+      } else if (tx.type === "revenue") {
+        previous = isCredit ? current + amount : current - amount;
+      }
+
+      balances[acc] = previous;
+
+      const snapshot = {};
+      for (const name of Object.keys(balances)) {
+        const isAcctCredit = types[name] === "credit";
+        if (name === acc) {
+          snapshot[name] = {
+            changed: true,
+            display: `${format(previous, isAcctCredit)} >> ${format(
+              current,
+              isAcctCredit
+            )}`,
+          };
+        } else {
+          snapshot[name] = {
+            changed: false,
+            display: format(balances[name], isAcctCredit),
+          };
+        }
+      }
+
+      result.push({ ...tx, balance_snapshot: snapshot });
+    }
+
+    setTransactions(result);
   };
 
   if (loading) return <p>Loading transactions...</p>;
   if (transactions.length === 0) return <p>No transactions found.</p>;
 
   const allAccounts = Array.from(
-    new Set(transactions.flatMap((tx) => Object.keys(tx.balance_after || {})))
+    new Set(
+      transactions.flatMap((tx) => Object.keys(tx.balance_snapshot || {}))
+    )
   );
+
+  const sortedAccounts = allAccounts.sort((a, b) => {
+    const typeA = accountTypes[a] || "other";
+    const typeB = accountTypes[b] || "other";
+
+    if (typeA === typeB) return a.localeCompare(b);
+    if (typeA === "checking") return -1;
+    if (typeB === "checking") return 1;
+    if (typeA === "credit") return -1;
+    if (typeB === "credit") return 1;
+    return 0;
+  });
 
   return (
     <div className="transaction-table-container">
@@ -80,7 +140,7 @@ function TransactionTable() {
             <th>Payment Method</th>
             <th>Amount</th>
             <th>Type</th>
-            {allAccounts.map((acc) => (
+            {sortedAccounts.map((acc) => (
               <th key={acc}>{acc} Balance</th>
             ))}
           </tr>
@@ -100,15 +160,20 @@ function TransactionTable() {
                 <td>{tx.name || "—"}</td>
                 <td>{tx.category?.join(" > ") || "—"}</td>
                 <td>{tx.account_name || "—"}</td>
-                <td>{`$${Number(tx.amount || 0).toFixed(2)}`}</td>
+                <td>${Number(tx.amount || 0).toFixed(2)}</td>
                 <td>{tx.type || "—"}</td>
-                {allAccounts.map((acc) => (
-                  <td key={acc}>
-                    {!isNaN(tx.balance_after?.[acc])
-                      ? `$${tx.balance_after[acc].toFixed(2)}`
-                      : "—"}
-                  </td>
-                ))}
+                {sortedAccounts.map((acc) => {
+                  const cell = tx.balance_snapshot?.[acc];
+                  return (
+                    <td key={acc}>
+                      {cell?.changed ? (
+                        <strong>{cell.display}</strong>
+                      ) : (
+                        cell?.display || "—"
+                      )}
+                    </td>
+                  );
+                })}
               </tr>
             );
           })}
