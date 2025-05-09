@@ -1,9 +1,5 @@
 .transaction-table-container {
-  margin-top: 2rem;
-  background: #fff;
-  padding: 1.5rem;
-  border-radius: 12px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.06);
+  padding: 2rem;
 }
 
 .transaction-table {
@@ -12,37 +8,42 @@
   font-size: 0.95rem;
 }
 
-.transaction-table th,
-.transaction-table td {
-  padding: 0.75rem 1rem;
-  text-align: left;
-  border-bottom: 1px solid #eee;
+/* Stronger, more defined header */
+.transaction-table thead {
+  background-color: #e2e8f0;
+  border-bottom: 3px solid #cbd5e0;
+  position: sticky;
+  top: 0;
+  z-index: 1;
 }
 
 .transaction-table th {
-  background: #f9fafb;
-  color: #444;
   font-weight: 600;
+  text-align: left;
+  padding: 0.75rem;
+  border-right: 1px solid #cbd5e0;
+  background-color: #e2e8f0;
 }
 
-.transaction-table tbody tr:hover {
-  background-color: #f5f7fa;
+.transaction-table td {
+  padding: 0.75rem;
+  border-bottom: 1px solid #e0e0e0;
+  vertical-align: top;
 }
 
-.real-row {
-  background-color: #e0f0ff;
+/* More visible row highlights */
+.transaction-table tr.real-row {
+  background-color: #e6f0ff; /* more defined blue */
 }
 
-.revenue-row {
-  background-color: #e6ffed;
+.transaction-table tr.revenue-row {
+  background-color: #d4f5e9; /* more defined green */
 }
 
-.virtual-row {
-  background-color: #f8f9fb;
-  opacity: 0.85;
+.transaction-table tr.virtual-row {
+  background-color: #fff6d1; /* light amber for future/planned */
 }
 
-.transaction-table td:last-child,
-.transaction-table th:last-child {
-  border-right: 1px solid #ddd;
+.transaction-table tr:hover {
+  background-color: #f1f5f9;
 }

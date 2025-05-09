@@ -4,7 +4,7 @@ import AccountsDisplay from "../components/AccountsDisplay";
 import { getFunctions, httpsCallable } from "firebase/functions";
 import { getApp } from "firebase/app";
 import { useState, useEffect } from "react";
-import { fetchAccounts } from "../services/plaidService";
+import { fetchAccounts, refreshBalances } from "../services/plaidService";
 
 function Dashboard() {
   const functions = getFunctions(getApp(), "us-central1");
@@ -37,7 +37,6 @@ function Dashboard() {
       });
       console.log("✅ Token exchanged successfully:", result.data.item_id);
 
-      // 🔁 Re-fetch accounts after linking
       const updated = await fetchAccounts();
       if (updated.success) setAccounts(updated.accounts);
     } catch (err) {
@@ -45,26 +44,38 @@ function Dashboard() {
     }
   };
 
+  const handleRefresh = async () => {
+    try {
+      const result = await refreshBalances();
+      alert(`✅ Refreshed ${result.updated} account(s).`);
+
+      const updated = await fetchAccounts();
+      if (updated.success) setAccounts(updated.accounts);
+    } catch (err) {
+      console.error("❌ Failed to refresh balances:", err.message);
+      alert("Failed to refresh balances.");
+    }
+  };
+
   return (
     <div className="dashboard-page">
       <h1>Dashboard</h1>
 
-      {/* 🔍 Show this if no banks linked */}
+      <div className="button-group">
+        <button onClick={handleRefresh}>🔄 Refresh Balances</button>
+        <PlaidLinkButton onSuccessCallback={handleSuccess} />
+      </div>
+
       {!loading && accounts.length === 0 && (
         <div className="link-bank-message">
           <p>You haven’t linked any banks yet.</p>
-          <PlaidLinkButton onSuccessCallback={handleSuccess} />
         </div>
       )}
 
-      {/* 🔍 Show this if banks exist */}
       {accounts.length > 0 && (
-        <>
-          <PlaidLinkButton onSuccessCallback={handleSuccess} />
-          <div style={{ marginTop: "2rem" }}>
-            <AccountsDisplay />
-          </div>
-        </>
+        <div style={{ marginTop: "2rem" }}>
+          <AccountsDisplay />
+        </div>
       )}
     </div>
   );

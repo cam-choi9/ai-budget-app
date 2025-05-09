@@ -42,3 +42,32 @@ export async function fetchRealTransactions() {
     ...doc.data(),
   }));
 }
+
+// ✅ Get latest current balance for each account
+export async function fetchLatestAccountBalances() {
+  const user = getAuth().currentUser;
+  if (!user) throw new Error("User not logged in");
+
+  const ref = collection(db, `users/${user.uid}/plaid_items`);
+  const snapshot = await getDocs(ref);
+
+  const balances = {};
+
+  snapshot.forEach((doc) => {
+    const item = doc.data();
+    (item.accounts || []).forEach((acc) => {
+      const name = acc.name || acc.account_id;
+      const subtype = acc.subtype || acc.account_type || "";
+      const isChecking = subtype.includes("checking") || subtype === "checking";
+      const current = isChecking
+        ? acc.balances?.available
+        : acc.balances?.current;
+
+      if (typeof current === "number") {
+        balances[name] = current;
+      }
+    });
+  });
+
+  return balances;
+}
