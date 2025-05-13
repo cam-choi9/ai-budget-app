@@ -7,8 +7,14 @@ import "../styles/TransactionTable.css";
 
 function TransactionTable() {
   const [transactions, setTransactions] = useState([]);
+  const [filtered, setFiltered] = useState([]);
   const [loading, setLoading] = useState(true);
   const [accountTypes, setAccountTypes] = useState({});
+  const [filters, setFilters] = useState({
+    type: "all",
+    paymentMethods: [],
+    categories: [],
+  });
 
   useEffect(() => {
     async function loadData() {
@@ -32,7 +38,7 @@ function TransactionTable() {
 
   const format = (value, isCredit = false) => {
     let num = Number(value);
-    if (isCredit && num > 0) num = Math.abs(num); // Show as positive unless overpaid
+    if (isCredit && num > 0) num = Math.abs(num);
     const fixed = num.toFixed(2);
     return `$${fixed.startsWith("-0.00") ? "0.00" : fixed}`;
   };
@@ -105,10 +111,56 @@ function TransactionTable() {
     }
 
     setTransactions(result);
+    setFiltered(result);
   };
 
-  if (loading) return <p>Loading transactions...</p>;
-  if (transactions.length === 0) return <p>No transactions found.</p>;
+  const handleCheckboxChange = (e) => {
+    const { name, value, checked } = e.target;
+    const updatedValues = checked
+      ? [...filters[name], value]
+      : filters[name].filter((val) => val !== value);
+
+    const nextFilters = { ...filters, [name]: updatedValues };
+    setFilters(nextFilters);
+
+    const newFiltered = transactions.filter((tx) => {
+      const matchType =
+        nextFilters.type === "all" || tx.type === nextFilters.type;
+      const matchPayment =
+        nextFilters.paymentMethods.length === 0 ||
+        nextFilters.paymentMethods.includes(tx.account_name);
+      const matchCategory =
+        nextFilters.categories.length === 0 ||
+        nextFilters.categories.some((cat) =>
+          tx.category?.join(" > ").includes(cat)
+        );
+      return matchType && matchPayment && matchCategory;
+    });
+
+    setFiltered(newFiltered);
+  };
+
+  const handleFilterChange = (e) => {
+    const { name, value } = e.target;
+    const nextFilters = { ...filters, [name]: value };
+    setFilters(nextFilters);
+
+    const newFiltered = transactions.filter((tx) => {
+      const matchType =
+        nextFilters.type === "all" || tx.type === nextFilters.type;
+      const matchPayment =
+        nextFilters.paymentMethods.length === 0 ||
+        nextFilters.paymentMethods.includes(tx.account_name);
+      const matchCategory =
+        nextFilters.categories.length === 0 ||
+        nextFilters.categories.some((cat) =>
+          tx.category?.join(" > ").includes(cat)
+        );
+      return matchType && matchPayment && matchCategory;
+    });
+
+    setFiltered(newFiltered);
+  };
 
   const allAccounts = Array.from(
     new Set(
@@ -128,6 +180,21 @@ function TransactionTable() {
     return 0;
   });
 
+  const uniqueAccounts = Array.from(
+    new Set(transactions.map((tx) => tx.account_name || "Unknown"))
+  );
+
+  const uniqueCategories = Array.from(
+    new Set(
+      transactions.flatMap((tx) =>
+        tx.category ? [tx.category.join(" > ")] : []
+      )
+    )
+  );
+
+  if (loading) return <p>Loading transactions...</p>;
+  if (transactions.length === 0) return <p>No transactions found.</p>;
+
   return (
     <div className="transaction-table-container">
       <h2>💰 Transactions</h2>
@@ -135,18 +202,71 @@ function TransactionTable() {
         <thead>
           <tr>
             <th>Date</th>
+            <th>
+              Type
+              <details className="filter-popover">
+                <summary> ▾ </summary>
+                <select
+                  name="type"
+                  value={filters.type}
+                  onChange={handleFilterChange}
+                >
+                  <option value="all">All</option>
+                  <option value="expense">Expenses</option>
+                  <option value="revenue">Revenue</option>
+                  <option value="virtual">Virtual</option>
+                </select>
+              </details>
+            </th>
+            <th>
+              Category
+              <details className="filter-popover">
+                <summary> ▾ </summary>
+                <div>
+                  {uniqueCategories.map((cat) => (
+                    <label key={cat}>
+                      <input
+                        type="checkbox"
+                        name="categories"
+                        value={cat}
+                        checked={filters.categories.includes(cat)}
+                        onChange={handleCheckboxChange}
+                      />
+                      {cat}
+                    </label>
+                  ))}
+                </div>
+              </details>
+            </th>
             <th>Item</th>
-            <th>Category</th>
-            <th>Payment Method</th>
             <th>Amount</th>
-            <th>Type</th>
+            <th>
+              Payment Method
+              <details className="filter-popover">
+                <summary> ▾ </summary>
+                <div>
+                  {uniqueAccounts.map((acc) => (
+                    <label key={acc}>
+                      <input
+                        type="checkbox"
+                        name="paymentMethods"
+                        value={acc}
+                        checked={filters.paymentMethods.includes(acc)}
+                        onChange={handleCheckboxChange}
+                      />
+                      {acc}
+                    </label>
+                  ))}
+                </div>
+              </details>
+            </th>
             {sortedAccounts.map((acc) => (
               <th key={acc}>{acc} Balance</th>
             ))}
           </tr>
         </thead>
         <tbody>
-          {transactions.map((tx) => {
+          {filtered.map((tx) => {
             const rowType =
               tx.type === "virtual"
                 ? "virtual-row"
@@ -157,11 +277,11 @@ function TransactionTable() {
             return (
               <tr key={tx.id} className={rowType}>
                 <td>{tx.date || "—"}</td>
-                <td>{tx.name || "—"}</td>
-                <td>{tx.category?.join(" > ") || "—"}</td>
-                <td>{tx.account_name || "—"}</td>
-                <td>${Number(tx.amount || 0).toFixed(2)}</td>
                 <td>{tx.type || "—"}</td>
+                <td>{tx.category?.join(" > ") || "—"}</td>
+                <td>{tx.name || "—"}</td>
+                <td>${Number(tx.amount || 0).toFixed(2)}</td>
+                <td>{tx.account_name || "—"}</td>
                 {sortedAccounts.map((acc) => {
                   const cell = tx.balance_snapshot?.[acc];
                   return (
