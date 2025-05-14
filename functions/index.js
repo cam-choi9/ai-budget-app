@@ -6,6 +6,8 @@ import { getAccounts } from "./src/plaid/getAccounts.js";
 import { getInstitution } from "./src/plaid/getInstitution.js";
 import { storePlaidTransactions } from "./src/plaid/storePlaidTransactions.js";
 import { refreshAccountBalances } from "./src/plaid/refreshAccountBalance.js";
+import { categorizeTransaction } from "./src/openai/categorizeTransaction.mjs";
+import { openaiTest } from "./src/test/openaiTest.js";
 
 export {
   createLinkToken,
@@ -16,4 +18,6 @@ export {
   getInstitution,
   storePlaidTransactions,
   refreshAccountBalances,
+  categorizeTransaction,
+  openaiTest,
 };
