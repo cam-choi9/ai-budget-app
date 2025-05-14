@@ -1,5 +1,5 @@
 import { storePlaidTransactions } from "../services/plaidService";
-import TransactionTable from "../components/TransactionTable";
+import TransactionTable from "../components/TransactionTable/TransactionTable";
 
 function Transactions() {
   const handleSync = async () => {

@@ -10,6 +10,18 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
+import { updateDoc } from "firebase/firestore"; // already partially imported
+
+export async function updateTransactionCategory(transactionId, newCategory) {
+  const user = getAuth().currentUser;
+  if (!user) throw new Error("User not logged in");
+
+  const txRef = doc(
+    db,
+    `users/${user.uid}/plaid_transactions/${transactionId}`
+  );
+  await updateDoc(txRef, { category: newCategory });
+}
 
 // ✅ Add manual transaction
 export async function addTransaction(userId, transactionData) {
