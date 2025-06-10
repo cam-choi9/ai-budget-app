@@ -2,9 +2,7 @@ from sqlalchemy.orm import Session
 from models.user import User
 from schemas.user import UserCreate
 from auth.utils import hash_password, verify_password
-
-def get_user_by_email(db: Session, email: str):
-    return db.query(User).filter(User.email == email).first()
+from utils.user_lookup import get_user_by_email
 
 def create_user(db: Session, user: UserCreate):
     hashed_pw = hash_password(user.password)

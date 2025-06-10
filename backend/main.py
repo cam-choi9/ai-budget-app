@@ -1,11 +1,11 @@
 from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
 from database import SessionLocal, engine
-from models.user import User
+from models.user import User as UserModel
 from schemas.user import UserCreate, UserOut, UserLogin, Token
 from crud.user import get_user_by_email, create_user, authenticate_user
 from database import Base
-from auth.utils import create_access_token
+from auth.utils import create_access_token, get_current_user
 
 Base.metadata.create_all(bind=engine)
 
@@ -34,3 +34,6 @@ def login(user: UserLogin, db: Session = Depends(get_db)):
     access_token = create_access_token(data={"sub": db_user.email})
     return {"access_token": access_token, "token_type": "bearer"}
 
+@app.get("/me", response_model=UserOut)
+def read_users_me(current_user: UserModel = Depends(get_current_user)):
+    return current_user
