@@ -1,7 +1,5 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from "../firebase/firebase";
 import "../styles/Login.css";
 
 function Login() {
@@ -15,19 +13,41 @@ function Login() {
     e.preventDefault();
     setError("");
 
+    const formBody = `username=${encodeURIComponent(
+      email
+    )}&password=${encodeURIComponent(password)}`;
+    console.log("Logging in with:", email, password);
+
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      navigate("/dashboard"); // redirect after successful login
+      const response = await fetch("http://localhost:8000/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: new URLSearchParams({
+          username: email,
+          password: password,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Login failed");
+      }
+
+      const data = await response.json();
+      console.log("✅ Login success:", data);
+
+      localStorage.setItem("access_token", data.access_token);
+      navigate("/dashboard");
     } catch (err) {
-      setError("Invalid email or password");
       console.error("Login failed:", err);
+      setError("Invalid email or password");
     }
   };
 
   return (
     <div className="login-container">
       <h2>Login</h2>
-
       <form onSubmit={handleLogin}>
         <input
           type="email"
