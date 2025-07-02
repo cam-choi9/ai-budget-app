@@ -6,7 +6,7 @@ from auth.routes import router as auth_router
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
-app.include_router(auth_router)
+app.include_router(auth_router, prefix='/api')
 
 # allows frontend to call backend without CORS error
 app.add_middleware(
