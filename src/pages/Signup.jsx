@@ -1,9 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/Signup.css";
-// Firebase import setting
-// import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
-// import { auth } from "../firebase/firebase";
 
 function Signup() {
   const navigate = useNavigate();
@@ -55,31 +52,6 @@ function Signup() {
       console.error("Signup failed: ", err);
     }
   };
-
-  // Firebase implementation
-  //   try {
-  //     const userCredential = await createUserWithEmailAndPassword(
-  //       auth,
-  //       email,
-  //       password
-  //     );
-  //     const displayName = `${firstName} ${lastName}`;
-
-  //     try {
-  //       await updateProfile(userCredential.user, {
-  //         displayName: `${firstName} ${lastName}`,
-  //       });
-  //     } catch (profileError) {
-  //       console.error("Failed to update profile name:", profileError);
-  //     }
-
-  //     navigate("/dashboard"); // redirect after successful signup
-  //   } catch (err) {
-  //     setError("Failed to create account. Please try again.");
-  //     console.error("Signup failed:", err);
-  //     setError(err.message); // helpful for frontend users too
-  //   }
-  // };
 
   return (
     <div className="signup-container">

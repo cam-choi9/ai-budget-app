@@ -28,4 +28,6 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
 
 @router.get("/me", response_model=UserOut)
 def read_users_me(current_user: UserModel = Depends(get_current_user)):
-    return current_user
+    print("📦 current_user =", current_user)
+    print("🧪 current_user dict =", current_user.__dict__)
+    return UserOut.model_validate(current_user).model_dump()
