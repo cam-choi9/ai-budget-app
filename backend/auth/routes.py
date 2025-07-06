@@ -26,8 +26,13 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
     token = create_access_token(data={"sub": user.email})
     return {"access_token": token, "token_type": "bearer"}
 
-@router.get("/me", response_model=UserOut)
+@router.get("/me")
 def read_users_me(current_user: UserModel = Depends(get_current_user)):
-    print("📦 current_user =", current_user)
-    print("🧪 current_user dict =", current_user.__dict__)
-    return UserOut.model_validate(current_user).model_dump()
+    print("🔥 USING THE CORRECT /me ROUTE")
+
+    return {
+        "id": current_user.id,
+        "email": current_user.email,
+        "first_name": current_user.first_name,
+        "last_name": current_user.last_name,
+    }

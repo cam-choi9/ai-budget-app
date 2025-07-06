@@ -1,12 +1,37 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import PlaidLinkButton from "../components/PlaidLinkButton";
+import AccountsDisplay from "../components/AccountsDisplay";
+import GreetingHeader from "../components/GreetingHeader";
+import SummaryRow from "../components/SummaryRow";
+import AccountsRow from "../components/AccountsRow";
+import "../styles/Dashboard.css";
 
 function Dashboard() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [accounts, setAccounts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  async function fetchAccounts() {
+    setRefreshing(true);
+    try {
+      const token = localStorage.getItem("access_token");
+      const accRes = await fetch("http://localhost:8000/api/plaid/accounts", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const accData = await accRes.json();
+      console.log("🔁 Refreshed Accounts:", accData);
+      setAccounts(accData.accounts || []);
+    } catch (err) {
+      console.error("❌ Failed to refresh accounts", err);
+      alert("Failed to refresh accounts");
+    } finally {
+      setRefreshing(false);
+    }
+  }
 
   useEffect(() => {
     const token = localStorage.getItem("access_token");
@@ -20,29 +45,16 @@ function Dashboard() {
         // Fetch user info
         const res = await fetch("http://localhost:8000/api/me", {
           headers: {
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${localStorage.getItem("access_token")}`,
           },
         });
 
         const text = await res.text();
-        console.log("📥 /api/me response text:", text);
-
         if (!res.ok) throw new Error("Token invalid or expired");
-
         const userData = JSON.parse(text);
         setUser(userData);
 
-        // Fetch accounts info
-        const accRes = await fetch("http://localhost:8000/api/plaid/accounts", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        const accData = await accRes.json();
-        console.log("🏦 Accounts:", accData);
-
-        setAccounts(accData.accounts || []);
+        await fetchAccounts();
       } catch (err) {
         console.error("❌ Dashboard load failed:", err);
         localStorage.removeItem("access_token");
@@ -56,7 +68,7 @@ function Dashboard() {
   }, [navigate]);
 
   const handlePlaidSuccess = async (public_token, metadata) => {
-    console.log("✅ Got public_token from Plaid:", public_token);
+    console.log("✅ Got public_token from Plaid:", public_token, metadata);
 
     try {
       const token = localStorage.getItem("access_token");
@@ -69,7 +81,7 @@ function Dashboard() {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ public_token }),
+          body: JSON.stringify({ public_token, metadata }), // ✅ ensure metadata is included
         }
       );
 
@@ -77,14 +89,13 @@ function Dashboard() {
 
       const data = await res.json();
       console.log("✅ Successfully exchanged public_token:", data);
-      alert("Bank account linked successfully!");
+      alert(`Bank account linked successfully! (${data.institution_name})`);
 
       // ✅ Refetch accounts
       const accRes = await fetch("http://localhost:8000/api/plaid/accounts", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
+
       const accData = await accRes.json();
       setAccounts(accData.accounts || []);
     } catch (err) {
@@ -95,34 +106,47 @@ function Dashboard() {
 
   if (loading) return <p>Loading...</p>;
 
+  function calculateTotalBalance(accounts) {
+    let total = 0;
+    for (const acc of accounts) {
+      const isCredit = acc.type === "credit";
+      const raw = isCredit ? acc.balances?.current : acc.balances?.available;
+      if (typeof raw === "number") {
+        total += isCredit ? -raw : raw;
+      }
+    }
+    return total.toFixed(2);
+  }
+
   return (
     <div className="dashboard-page">
-      <h1>Welcome to your Dashboard</h1>
-      {user ? (
-        <div>
-          <p>
-            ✅ Logged in as: <strong>{user.email}</strong>
-          </p>
-          <p>User ID: {user.id}</p>
-          <br />
-          <PlaidLinkButton onSuccessCallback={handlePlaidSuccess} />
-          <h2>💳 Linked Accounts</h2>
-          {accounts.length === 0 ? (
-            <p>No accounts linked.</p>
-          ) : (
-            <ul>
-              {accounts.map((acc) => (
-                <li key={acc.account_id}>
-                  <strong>{acc.name}</strong> — {acc.subtype} — $
-                  {acc.balances.available ?? "N/A"}
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      ) : (
-        <p>❌ Not authenticated</p>
-      )}
+      <div className="dashboard-container">
+        {user ? (
+          <div>
+            <GreetingHeader name={user?.name || user?.email?.split("@")[0]} />
+            <SummaryRow totalBalance={calculateTotalBalance(accounts)} />
+            <PlaidLinkButton onSuccessCallback={handlePlaidSuccess} />
+
+            <div className="accounts-section">
+              <div className="accounts-header">
+                <h2>💳 Bank Accounts</h2>
+                <button className="refresh-btn" onClick={fetchAccounts}>
+                  🔁 Refresh Balances
+                </button>
+              </div>
+
+              <AccountsRow
+                accounts={accounts}
+                onAddClick={() =>
+                  document.getElementById("plaid-link-btn")?.click()
+                }
+              />
+            </div>
+          </div>
+        ) : (
+          <p>❌ Not authenticated</p>
+        )}
+      </div>
     </div>
   );
 }

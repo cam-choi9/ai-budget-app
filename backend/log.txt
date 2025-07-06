@@ -1,0 +1,64 @@
+INFO:     Will watch for changes in these directories: ['/Users/jaeseokchoi/Desktop/ai-budget-app/backend']
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [79204] using StatReload
+/Users/jaeseokchoi/Desktop/ai-budget-app/backend/venv/lib/python3.7/site-packages/jose/backends/cryptography_backend.py:4: CryptographyDeprecationWarning: Python 3.7 is no longer supported by the Python core team and support for it is deprecated in cryptography. The next release of cryptography will remove support for Python 3.7.
+  from cryptography.exceptions import InvalidSignature, InvalidTag
+INFO:     Started server process [79206]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+📡 Connected to DB: postgresql://ai_budget_db_6ttn_user:odRV3WlvgA65CIXwZv4TK916lOUUnQr8@dpg-d0ru3p63jp1c73e4icsg-a.oregon-postgres.render.com/ai_budget_db_6ttn?sslmode=require
+📥 ROUTE CALLED: POST /api/login
+INFO:     127.0.0.1:54051 - "POST /api/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54051 - "OPTIONS /api/me HTTP/1.1" 200 OK
+📥 ROUTE CALLED: GET /api/me
+🔥 USING THE CORRECT /me ROUTE
+INFO:     127.0.0.1:54051 - "GET /api/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54057 - "OPTIONS /api/me HTTP/1.1" 200 OK
+📥 ROUTE CALLED: GET /api/me
+INFO:     127.0.0.1:54051 - "OPTIONS /api/me HTTP/1.1" 200 OK
+📥 ROUTE CALLED: GET /api/me
+🔥 USING THE CORRECT /me ROUTE
+INFO:     127.0.0.1:54051 - "GET /api/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54051 - "OPTIONS /api/plaid/accounts HTTP/1.1" 200 OK
+📥 ROUTE CALLED: GET /api/plaid/accounts
+🔥 USING THE CORRECT /me ROUTE
+INFO:     127.0.0.1:54057 - "GET /api/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54057 - "OPTIONS /api/plaid/accounts HTTP/1.1" 200 OK
+📥 ROUTE CALLED: GET /api/plaid/accounts
+INFO:     127.0.0.1:54051 - "GET /api/plaid/accounts HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54057 - "OPTIONS /api/plaid/create_link_token HTTP/1.1" 200 OK
+📥 ROUTE CALLED: GET /api/plaid/create_link_token
+INFO:     127.0.0.1:54051 - "OPTIONS /api/plaid/create_link_token HTTP/1.1" 200 OK
+📥 ROUTE CALLED: GET /api/plaid/create_link_token
+❌ Error creating link token: Invalid type for variable '0'. Required value type is CountryCode and passed type was str at ['country_codes'][0]
+INFO:     127.0.0.1:54051 - "GET /api/plaid/create_link_token HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:54064 - "GET /api/plaid/accounts HTTP/1.1" 200 OK
+❌ Error creating link token: Invalid type for variable '0'. Required value type is CountryCode and passed type was str at ['country_codes'][0]
+INFO:     127.0.0.1:54057 - "GET /api/plaid/create_link_token HTTP/1.1" 500 Internal Server Error
+WARNING:  StatReload detected changes in 'api/plaid.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [79206]
+/Users/jaeseokchoi/Desktop/ai-budget-app/backend/venv/lib/python3.7/site-packages/jose/backends/cryptography_backend.py:4: CryptographyDeprecationWarning: Python 3.7 is no longer supported by the Python core team and support for it is deprecated in cryptography. The next release of cryptography will remove support for Python 3.7.
+  from cryptography.exceptions import InvalidSignature, InvalidTag
+INFO:     Started server process [83019]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  StatReload detected changes in 'api/plaid.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [83019]
+📡 Connected to DB: postgresql://ai_budget_db_6ttn_user:odRV3WlvgA65CIXwZv4TK916lOUUnQr8@dpg-d0ru3p63jp1c73e4icsg-a.oregon-postgres.render.com/ai_budget_db_6ttn?sslmode=require
+/Users/jaeseokchoi/Desktop/ai-budget-app/backend/venv/lib/python3.7/site-packages/jose/backends/cryptography_backend.py:4: CryptographyDeprecationWarning: Python 3.7 is no longer supported by the Python core team and support for it is deprecated in cryptography. The next release of cryptography will remove support for Python 3.7.
+  from cryptography.exceptions import InvalidSignature, InvalidTag
+INFO:     Started server process [83042]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [83042]
+📡 Connected to DB: postgresql://ai_budget_db_6ttn_user:odRV3WlvgA65CIXwZv4TK916lOUUnQr8@dpg-d0ru3p63jp1c73e4icsg-a.oregon-postgres.render.com/ai_budget_db_6ttn?sslmode=require
+INFO:     Stopping reloader process [79204]

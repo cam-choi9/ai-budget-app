@@ -1,21 +1,25 @@
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import JWTError, jwt
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, noload
 from database import SessionLocal
 from passlib.context import CryptContext
 from datetime import datetime, timedelta
 from config import settings
 from utils.user_lookup import get_user_by_email
+from models.user import User  # ✅ Directly import User model
 
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
+
 def hash_password(password: str) -> str:
     return pwd_context.hash(password)
 
+
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
+
 
 def create_access_token(data: dict, expires_delta: timedelta = None):
     to_encode = data.copy()
@@ -23,6 +27,7 @@ def create_access_token(data: dict, expires_delta: timedelta = None):
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
     return encoded_jwt
+
 
 oauth2_scheme = HTTPBearer()
 
@@ -34,7 +39,11 @@ def get_db():
     finally:
         db.close()
 
-def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+
+def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(oauth2_scheme),
+    db: Session = Depends(get_db)
+):
     token = credentials.credentials
 
     credentials_exception = HTTPException(
@@ -51,7 +60,15 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(oauth2_
     except JWTError:
         raise credentials_exception
 
-    user = get_user_by_email(db, email=email)
+    # ✅ This loads the user without any relationships (like .plaid_items)
+    user = (
+        db.query(User)
+        .options(noload("*"))  # Disables all ORM relationships — avoids RecursionError
+        .filter_by(email=email)
+        .first()
+    )
+
     if user is None:
         raise credentials_exception
+
     return user

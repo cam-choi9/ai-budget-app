@@ -1,0 +1,96 @@
+/* src/styles/AccountsRow.css */
+
+.accounts-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.account-card {
+  width: 250px;
+  background: #fff;
+  border-radius: 12px;
+  padding: 1rem;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.account-header {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.account-icon {
+  font-size: 1.5rem;
+}
+
+.account-institution {
+  font-weight: bold;
+}
+
+.account-type {
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.account-balance {
+  font-size: 1.25rem;
+  font-weight: bold;
+  margin-top: 0.5rem;
+}
+
+.account-transactions {
+  margin-top: 1rem;
+}
+
+.transaction-item {
+  font-size: 0.85rem;
+  color: #444;
+}
+
+.add-account-card {
+  background-color: #f6f6f6;
+  cursor: pointer;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+.add-plus {
+  font-weight: bold;
+  font-size: 1.1rem;
+  color: #000;
+}
+
+.add-subtext {
+  font-size: 0.85rem;
+  color: #888;
+  margin-top: 0.25rem;
+}
+
+.credit-utilization-container {
+  margin-top: 0.5rem;
+}
+
+.credit-utilization-bar-bg {
+  background: #eee;
+  height: 8px;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.credit-utilization-bar-fill {
+  background: #2b6cb0;
+  height: 8px;
+  transition: width 0.3s ease;
+}
+
+.credit-utilization-label {
+  font-size: 0.85rem;
+  color: #444;
+  margin-top: 0.25rem;
+}
