@@ -5,6 +5,8 @@ from models.plaid_item import PlaidItem
 from config import settings
 from sqlalchemy.orm import Session
 from database import get_db
+from datetime import datetime, timedelta
+from models.transaction import Transaction
 
 from plaid import Configuration, ApiClient, Environment
 from plaid.api import plaid_api
@@ -15,6 +17,8 @@ from plaid.model.accounts_get_request import AccountsGetRequest
 from plaid.model.link_token_create_response import LinkTokenCreateResponse
 from plaid.model.country_code import CountryCode
 from plaid.model.products import Products
+from plaid.model.transactions_get_request import TransactionsGetRequest
+from plaid.model.transactions_get_request_options import TransactionsGetRequestOptions
 
 
 router = APIRouter()
@@ -155,4 +159,87 @@ def get_accounts(current_user: User = Depends(get_current_user), db: Session = D
     except Exception as e:
         print("❌ Failed to fetch accounts:", str(e))
         raise HTTPException(status_code=500, detail="Unable to fetch accounts")
+
+
+@router.post("/plaid/sync-transactions")
+def sync_transactions(user_id: int, db: Session = Depends(get_db)):
+    # 1. Get access_token
+    plaid_item = db.query(PlaidItem).filter(PlaidItem.user_id == user_id).first()
+    if not plaid_item:
+        raise HTTPException(status_code=404, detail="Plaid item not found.")
+
+    access_token = plaid_item.access_token
+
+    # 2. Call Plaid to get transactions + accounts
+    start_date = (datetime.now() - timedelta(days=30)).date()
+    end_date = datetime.now().date()
+
+    try:
+        request = TransactionsGetRequest(
+            access_token=access_token,
+            start_date=start_date,
+            end_date=end_date,
+            options=TransactionsGetRequestOptions(count=100, offset=0)
+        )
+        response = plaid_client.transactions_get(request)
+        transactions = response["transactions"]
+        print("🔍 First transaction:", transactions[0])
+
+
+        # Get account metadata
+        accounts_response = plaid_client.accounts_get(
+            AccountsGetRequest(access_token=access_token)
+        )
+        accounts_by_id = {acct.account_id: acct for acct in accounts_response.accounts}
+
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    inserted_count = 0
+    account_balances = {}
+
+    for tx in transactions:
+        transaction_id = tx["transaction_id"]
+        if db.query(Transaction).filter_by(transaction_id=transaction_id).first():
+            continue
+
+        account_id = tx["account_id"]
+        account_key = str(account_id)
+
+        # Set up balances (simple in-memory for now)
+        if account_key not in account_balances:
+            account_balances[account_key] = 0.0
+
+        prev_balance = account_balances[account_key]
+        new_balance = prev_balance - tx["amount"] if tx["amount"] > 0 else prev_balance + abs(tx["amount"])
+        account_balances[account_key] = new_balance
+
+        # Extract account metadata
+        account = accounts_by_id.get(account_id)
+        institution_name = plaid_item.institution_name or "Unknown Bank"
+        account_subtype = str(account.subtype.value) if account and account.subtype else "unknown"
+        account_mask = account.mask if account else "0000"
+        account_name_display = f"{institution_name} • {account_subtype} • ****{account_mask}"
+
+        new_tx = Transaction(
+            user_id=user_id,
+            transaction_id=transaction_id,
+            date=tx["date"],
+            item=tx["name"],
+            type="expense" if tx["amount"] > 0 else "income",
+            category = " • ".join(tx["category"]) if tx.get("category") else "Uncategorized",
+            amount=tx["amount"],
+            account_name=account_name_display,
+            account_type=account_subtype,
+            balance_before=prev_balance,
+            balance_after=new_balance,
+            is_virtual=False,
+        )
+        db.add(new_tx)
+        inserted_count += 1
+
+    db.commit()
+    return {"message": f"Inserted {inserted_count} new transactions"}
+
+
 

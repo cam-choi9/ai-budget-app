@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import PlaidLinkButton from "../components/PlaidLinkButton";
-import AccountsDisplay from "../components/AccountsDisplay";
 import GreetingHeader from "../components/GreetingHeader";
 import SummaryRow from "../components/SummaryRow";
 import AccountsRow from "../components/AccountsRow";
