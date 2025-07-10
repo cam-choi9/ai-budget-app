@@ -1,25 +1,107 @@
-import { storePlaidTransactions } from "../services/plaidService";
-import TransactionTable from "../components/TransactionTable/TransactionTable";
+import { useEffect, useState } from "react";
+import { fetchTransactions, syncTransactions } from "../services/transactions";
 
-function Transactions() {
-  const handleSync = async () => {
+import "../styles/transactions.css";
+
+export default function TransactionsPage() {
+  const [transactions, setTransactions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [syncing, setSyncing] = useState(false);
+
+  const loadTransactions = () => {
+    setLoading(true);
+    fetchTransactions()
+      .then(setTransactions)
+      .catch((err) => console.error("Fetch error:", err))
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    loadTransactions();
+  }, []);
+
+  const handleSyncClick = async () => {
     try {
-      const result = await storePlaidTransactions();
-      alert(`✅ Synced ${result.count} transactions.`);
+      setSyncing(true);
+      await syncTransactions(2); // hardcoded user_id=2
+      loadTransactions(); // refresh after sync
     } catch (err) {
-      alert("❌ Failed to sync transactions.");
+      console.error("Sync failed:", err);
+    } finally {
+      setSyncing(false);
     }
   };
 
   return (
-    <div className="dashboard">
-      <h1>Transactions</h1>
-      <button onClick={handleSync}>🔄 Sync Transactions from Plaid</button>
+    <div className="transaction-list">
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
+        <h1
+          style={{
+            fontSize: "1.75rem",
+            fontWeight: "bold",
+            marginBottom: "1rem",
+          }}
+        >
+          🧾 Your Transactions
+        </h1>
+        <button
+          onClick={handleSyncClick}
+          disabled={syncing}
+          style={{
+            padding: "0.5rem 1rem",
+            borderRadius: "6px",
+            backgroundColor: "#3b82f6",
+            color: "white",
+            border: "none",
+            cursor: "pointer",
+          }}
+        >
+          {syncing ? "Fetching..." : "Fetch Transactions"}
+        </button>
+      </div>
 
-      {/* ✅ Show synced transaction table */}
-      <TransactionTable />
+      {loading ? (
+        <p>Loading transactions...</p>
+      ) : transactions.length === 0 ? (
+        <p style={{ color: "#6b7280" }}>No transactions found.</p>
+      ) : (
+        transactions.map((tx) => (
+          <div
+            key={tx.id}
+            className={`transaction-card ${
+              tx.type === "income" ? "income" : "expense"
+            }`}
+          >
+            <div className="transaction-header">
+              <div>
+                <div className="transaction-title">{tx.item}</div>
+                <div className="transaction-subtext">
+                  {tx.date} • {tx.category} • {tx.account_name}
+                </div>
+              </div>
+              <div
+                className={`transaction-amount ${
+                  tx.type === "income" ? "income" : "expense"
+                }`}
+              >
+                {tx.type === "income"
+                  ? `+$${Math.abs(tx.amount).toFixed(2)}`
+                  : `-$${Math.abs(tx.amount).toFixed(2)}`}
+              </div>
+            </div>
+            <div className="transaction-balance">
+              Balance: ${tx.balance_before.toFixed(2)} →{" "}
+              <strong>${tx.balance_after.toFixed(2)}</strong>
+            </div>
+          </div>
+        ))
+      )}
     </div>
   );
 }
-
-export default Transactions;

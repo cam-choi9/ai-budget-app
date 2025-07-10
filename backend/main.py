@@ -5,6 +5,7 @@ from auth.routes import router as auth_router
 from api.plaid import router as plaid_router
 from models import plaid_item
 from config import settings
+from api import transactions
 import sys
 import traceback
 
@@ -42,5 +43,6 @@ app.add_middleware(
 # ✅ Route setup
 app.include_router(auth_router, prefix="/api")
 app.include_router(plaid_router, prefix="/api")
+app.include_router(transactions.router, prefix="/api")
 
 print("📡 Connected to DB:", settings.DATABASE_URL)
