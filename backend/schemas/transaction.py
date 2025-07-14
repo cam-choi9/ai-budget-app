@@ -8,7 +8,8 @@ class TransactionOut(BaseModel):
     date: date
     item: str
     type: str
-    category: str
+    primary_category: Optional[str]  # ✅ Correct
+    subcategory: Optional[str]       # ✅ Correct
     amount: float
     account_name: str
     account_type: str

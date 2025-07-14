@@ -56,3 +56,32 @@
   font-size: 0.875rem;
   color: #4b5563;
 }
+
+.button-row {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.button-row button {
+  padding: 8px 12px;
+  font-weight: 500;
+  border: none;
+  background: #1e90ff;
+  color: white;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.button-row button:hover {
+  background: #0070d3;
+}
+
+.tx-category {
+  font-weight: 500;
+  color: #4b5563; /* neutral gray */
+}
+
+.tx-category::first-letter {
+  text-transform: uppercase;
+}

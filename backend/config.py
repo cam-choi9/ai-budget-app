@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int
     PLAID_CLIENT_ID: str = Field(..., env="PLAID_CLIENT_ID")
     PLAID_SECRET: str = Field(..., env="PLAID_SECRET")
+    openai_api_key: str  
     ENV: str
 
     class Config:

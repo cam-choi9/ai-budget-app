@@ -8,6 +8,10 @@ from config import settings
 from api import transactions
 import sys
 import traceback
+from dotenv import load_dotenv
+from api import ai
+
+load_dotenv()
 
 # ✅ Create the app first
 app = FastAPI()
@@ -44,5 +48,6 @@ app.add_middleware(
 app.include_router(auth_router, prefix="/api")
 app.include_router(plaid_router, prefix="/api")
 app.include_router(transactions.router, prefix="/api")
+app.include_router(ai.router, prefix="/api")
 
 print("📡 Connected to DB:", settings.DATABASE_URL)
