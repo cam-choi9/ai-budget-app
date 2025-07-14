@@ -21,3 +21,13 @@ export const syncTransactions = async (userId) => {
   }
   return res.json();
 };
+
+export const categorizeTransactions = async () => {
+  const res = await fetch(`${API_BASE}/ai/categorize-transactions`, {
+    method: "POST",
+  });
+  if (!res.ok) {
+    throw new Error("Failed to categorize transactions");
+  }
+  return res.json();
+};

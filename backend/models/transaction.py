@@ -11,7 +11,8 @@ class Transaction(Base):
     date = Column(Date)
     item = Column(String)
     type = Column(String)  # 'income' or 'expense'
-    category = Column(String)
+    primary_category = Column(String, nullable=True)
+    subcategory = Column(String, nullable=True)
     amount = Column(Float)
     account_name = Column(String)
     account_type = Column(String)  # checking, credit, etc.
@@ -20,4 +21,4 @@ class Transaction(Base):
     is_virtual = Column(Boolean, default=False)
     tags = Column(String)  # optional, comma-separated
     transaction_id = Column(String, unique=True, nullable=True)
-
+    
