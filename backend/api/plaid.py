@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from database import get_db
 from datetime import datetime, timedelta
 from models.transaction import Transaction
+from models.account import Account  
 
 from plaid import Configuration, ApiClient, Environment
 from plaid.api import plaid_api
@@ -19,6 +20,7 @@ from plaid.model.country_code import CountryCode
 from plaid.model.products import Products
 from plaid.model.transactions_get_request import TransactionsGetRequest
 from plaid.model.transactions_get_request_options import TransactionsGetRequestOptions
+
 
 
 router = APIRouter()
@@ -127,7 +129,10 @@ def get_plaid_items(
 
 
 @router.get("/plaid/accounts")
-def get_accounts(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+def get_accounts(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
     try:
         plaid_item = (
             db.query(PlaidItem)
@@ -141,23 +146,49 @@ def get_accounts(current_user: User = Depends(get_current_user), db: Session = D
         request = AccountsGetRequest(access_token=plaid_item.access_token)
         response = plaid_client.accounts_get(request)
 
+        print("🔁 Fetched", len(response.accounts), "accounts from Plaid")
+
         institution_name = plaid_item.institution_name or "Unknown Institution"
 
-        # ✅ Use .to_dict() to flatten Plaid SDK objects
-        # ✅ Append institution_name to each account
-        accounts_data = [
-            {
-                **acct.to_dict(),
-                "institution_name": institution_name
-            }
-            for acct in response.accounts
-        ]
+        accounts_data = []
 
+        for acct in response.accounts:
+            plaid_account_id = acct.account_id
+            existing_account = db.query(Account).filter_by(plaid_account_id=plaid_account_id).first()
 
+            if not existing_account:
+                new_account = Account(
+                    user_id=current_user.id,
+                    plaid_item_id=plaid_item.id,
+                    plaid_account_id=plaid_account_id,
+                    official_name=acct.official_name or acct.name,
+                    account_type=str(acct.type),
+                    last_four=acct.mask,
+                    custom_name=None  # user can set later in settings                    
+                )
+                db.add(new_account)
+                db.flush()  # flush to get new_account.id
+                account_to_return = new_account
+            else:
+                account_to_return = existing_account
+
+            # Prepare return data
+            accounts_data.append({
+                "id": account_to_return.id,
+                "plaid_account_id": plaid_account_id,
+                "official_name": account_to_return.official_name,
+                "account_type": account_to_return.account_type,
+                "last_four": account_to_return.last_four,
+                "custom_name": account_to_return.custom_name,
+                "institution_name": institution_name,
+                "balances": acct.balances.to_dict(), 
+            })
+
+        db.commit()
         return {"accounts": accounts_data}
 
     except Exception as e:
-        print("❌ Failed to fetch accounts:", str(e))
+        print("❌ Failed to fetch/save accounts:", str(e))
         raise HTTPException(status_code=500, detail="Unable to fetch accounts")
 
 
@@ -241,6 +272,4 @@ def sync_transactions(user_id: int, db: Session = Depends(get_db)):
 
     db.commit()
     return {"message": f"Inserted {inserted_count} new transactions"}
-
-
 

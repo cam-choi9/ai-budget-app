@@ -108,7 +108,7 @@ function Dashboard() {
   function calculateTotalBalance(accounts) {
     let total = 0;
     for (const acc of accounts) {
-      const isCredit = acc.type === "credit";
+      const isCredit = acc.account_type === "credit";
       const raw = isCredit ? acc.balances?.current : acc.balances?.available;
       if (typeof raw === "number") {
         total += isCredit ? -raw : raw;
