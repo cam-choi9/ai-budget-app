@@ -3,22 +3,26 @@ import "../styles/AccountsRow.css";
 function AccountCard({ account }) {
   const {
     institution_name,
-    name,
-    mask,
-    type,
-    subtype,
+    official_name,
+    custom_name,
+    account_type,
+    last_four,
     balances,
     recent_transactions = [],
   } = account;
 
-  const isCredit = type === "credit";
+  // Handle credit vs checking/savings
+  const isCredit = account_type === "credit";
   const rawBalance = isCredit ? balances?.current : balances?.available;
   const creditLimit = balances?.limit;
 
-  const formattedBalance =
-    typeof rawBalance === "number"
-      ? `$${Math.abs(rawBalance).toFixed(2)}`
-      : "N/A";
+  let formattedBalance = "N/A";
+
+  if (typeof rawBalance === "number") {
+    // ✅ Show the real sign (negative or positive)
+    const sign = rawBalance < 0 ? "-" : "";
+    formattedBalance = `${sign}$${Math.abs(rawBalance).toFixed(2)}`;
+  }
 
   const utilization =
     isCredit &&
@@ -27,24 +31,26 @@ function AccountCard({ account }) {
       ? (rawBalance / creditLimit) * 100
       : null;
 
-  const icon = isCredit ? "💳" : subtype === "savings" ? "🏦" : "💵";
+  const icon = isCredit ? "💳" : account_type === "savings" ? "🏦" : "💵";
 
   return (
     <div className="account-card">
+      {/* Header: Icon + Account Name */}
       <div className="account-header">
         <span className="account-icon">{icon}</span>
         <div>
           <p className="account-institution">
-            {institution_name || "Unnamed Bank"}
+            {custom_name ||
+              `${institution_name} • ${account_type} • ****${last_four}`}
           </p>
-          <p className="account-type">{`${subtype || type} ••••${
-            mask || "XXXX"
-          }`}</p>
+          <p className="account-type">{official_name || ""}</p>
         </div>
       </div>
 
+      {/* Balance Display */}
       <p className="account-balance">{formattedBalance}</p>
 
+      {/* Credit Utilization (only for credit accounts) */}
       {isCredit && creditLimit && (
         <div className="credit-utilization-container">
           <div className="credit-utilization-bar-bg">
@@ -59,6 +65,7 @@ function AccountCard({ account }) {
         </div>
       )}
 
+      {/* Recent Transactions */}
       {recent_transactions.length > 0 && (
         <div className="account-transactions">
           {recent_transactions.slice(0, 2).map((tx, idx) => (

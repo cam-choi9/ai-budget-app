@@ -3,7 +3,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from database import SessionLocal, engine, Base
 from auth.routes import router as auth_router
 from api.plaid import router as plaid_router
-from models import plaid_item
 from config import settings
 from api import transactions
 import sys

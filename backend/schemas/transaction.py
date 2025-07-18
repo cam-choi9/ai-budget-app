@@ -20,3 +20,21 @@ class TransactionOut(BaseModel):
 
     class Config:
         from_attributes = True  # using SQLAlchemy
+
+
+class TransactionUpdate(BaseModel):
+    item: Optional[str]
+    primary_category: Optional[str]
+    subcategory: Optional[str]
+
+
+class TransactionCreate(BaseModel):
+    user_id: int
+    date: date
+    item: str
+    type: str
+    primary_category: str
+    subcategory: Optional[str]
+    amount: float
+    account_name: str
+    account_type: str

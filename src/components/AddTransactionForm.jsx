@@ -1,84 +1,90 @@
-import { useState } from "react";
-import { useAuth } from "../context/AuthContext";
-import { addTransaction, getTransactions } from "../firebase/firestore";
+import React from "react";
 import "../styles/AddTransactionForm.css";
-import AddTransactionFields from "./AddTransactionFields";
 
-function AddTransactionForm({ onAdd }) {
-  const { user } = useAuth();
-  const [formData, setFormData] = useState({
-    name: "",
-    amount: "",
-    category: "",
-    type: "expense",
-    expenseType: "variable",
-    paymentMethod: "",
-    date: "",
-    note: "",
-  });
-
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError("");
-    setLoading(true);
-
-    try {
-      const transaction = {
-        ...formData,
-        amount: parseFloat(formData.amount),
-        isManual: true,
-        isAI: false,
-        accountId: "manual-entry",
-      };
-
-      await addTransaction(user.uid, transaction);
-
-      if (onAdd) {
-        const updated = await getTransactions(user.uid);
-        onAdd(updated);
-      }
-
-      setFormData({
-        name: "",
-        amount: "",
-        category: "",
-        type: "expense",
-        expenseType: "variable",
-        paymentMethod: "",
-        date: "",
-        note: "",
-      });
-    } catch (err) {
-      console.error("Add transaction error:", err);
-      setError("Failed to add transaction.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
+export default function AddTransactionForm({ newTx, onChange, onSave }) {
   return (
-    <form onSubmit={handleSubmit} className="add-transaction-form">
-      <h3 className="form-title">Add Transaction</h3>
+    <div className="add-transaction-card">
+      <h2 className="form-title">➕ Add a New Transaction</h2>
 
-      <AddTransactionFields formData={formData} handleChange={handleChange} />
+      <div className="form-grid">
+        <input
+          className="form-input"
+          name="item"
+          value={newTx.item}
+          onChange={onChange}
+          placeholder="Transaction name"
+        />
 
-      <button type="submit" disabled={loading} className="submit-button">
-        {loading ? "Adding..." : "Add Transaction"}
+        <input
+          className="form-input"
+          name="amount"
+          type="number"
+          value={newTx.amount}
+          onChange={onChange}
+          placeholder="Amount"
+        />
+
+        <select
+          className="form-input"
+          name="type"
+          value={newTx.type}
+          onChange={onChange}
+        >
+          <option value="expense">Expense</option>
+          <option value="income">Income</option>
+        </select>
+
+        <input
+          className="form-input"
+          name="date"
+          type="date"
+          value={newTx.date}
+          onChange={onChange}
+        />
+
+        <input
+          className="form-input"
+          name="primary_category"
+          value={newTx.primary_category}
+          onChange={onChange}
+          placeholder="Primary Category"
+        />
+
+        <input
+          className="form-input"
+          name="subcategory"
+          value={newTx.subcategory}
+          onChange={onChange}
+          placeholder="Subcategory"
+        />
+
+        <input
+          className="form-input"
+          name="account_name"
+          value={newTx.account_name}
+          onChange={onChange}
+          placeholder="Account Name"
+        />
+
+        <select
+          className="form-input"
+          name="account_type"
+          value={newTx.account_type}
+          onChange={onChange}
+        >
+          <option value="">Account Type</option>
+          <option value="checking">Checking</option>
+          <option value="savings">Savings</option>
+          <option value="credit">Credit</option>
+          <option value="cash">Cash</option>
+          <option value="investment">Investment</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+
+      <button className="form-button" onClick={onSave}>
+        Save Transaction
       </button>
-
-      {error && <p className="error-message">{error}</p>}
-    </form>
+    </div>
   );
 }
-
-export default AddTransactionForm;
