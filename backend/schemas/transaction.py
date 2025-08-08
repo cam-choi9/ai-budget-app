@@ -3,6 +3,10 @@ from pydantic import BaseModel
 from datetime import date
 from typing import Optional
 
+class SpendingCategoryOut(BaseModel):
+    category: str
+    total: float
+
 class TransactionOut(BaseModel):
     id: int
     date: date
@@ -28,13 +32,11 @@ class TransactionUpdate(BaseModel):
     subcategory: Optional[str]
 
 
-class TransactionCreate(BaseModel):
-    user_id: int
+class TransactionCreate(BaseModel):    
     date: date
     item: str
     type: str
     primary_category: str
     subcategory: Optional[str]
     amount: float
-    account_name: str
-    account_type: str
+    account_id: int    

@@ -13,13 +13,7 @@ function Sidebar() {
           <Link to="/transactions">Transactions</Link>
         </li>
         <li>
-          <Link to="/dashboard">Budget</Link>
-        </li>
-        <li>
-          <Link to="/dashboard">Settings</Link>
-        </li>
-        <li>
-          <Link to="/profile">Profile</Link>
+          <Link to="/settings">Settings</Link>
         </li>
       </ul>
     </aside>

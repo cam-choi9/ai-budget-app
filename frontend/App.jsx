@@ -2,8 +2,8 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import Dashboard from "./pages/Dashboard";
-import Profile from "./pages/Profile";
 import Transactions from "./pages/Transactions";
+import Settings from "./pages/Settings";
 import PrivateRoute from "./components/PrivateRoute";
 import DashboardLayout from "./layouts/DashboardLayout";
 
@@ -29,22 +29,22 @@ function App() {
       />
 
       <Route
-        path="/profile"
+        path="/transactions"
         element={
           <PrivateRoute>
             <DashboardLayout>
-              <Profile />
+              <Transactions />
             </DashboardLayout>
           </PrivateRoute>
         }
       />
 
       <Route
-        path="/transactions"
+        path="/settings"
         element={
           <PrivateRoute>
             <DashboardLayout>
-              <Transactions />
+              <Settings />
             </DashboardLayout>
           </PrivateRoute>
         }

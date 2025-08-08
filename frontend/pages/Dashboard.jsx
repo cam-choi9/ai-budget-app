@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import TopSpendingCategories from "../components/TopSpendingCategories";
 import PlaidLinkButton from "../components/PlaidLinkButton";
 import GreetingHeader from "../components/GreetingHeader";
 import SummaryRow from "../components/SummaryRow";
@@ -140,6 +141,11 @@ function Dashboard() {
                   document.getElementById("plaid-link-btn")?.click()
                 }
               />
+            </div>
+
+            <div className="spending-section">
+              <h2>📊 Top Spending Categories</h2>
+              <TopSpendingCategories />
             </div>
           </div>
         ) : (

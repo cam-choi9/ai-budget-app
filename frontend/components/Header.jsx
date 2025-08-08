@@ -1,20 +1,25 @@
 import "../styles/Header.css";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 function Header() {
-  const { logout, user } = useAuth();
+  const { user, setUser } = useAuth();
+  const navigate = useNavigate();
 
-  const handleLogout = async () => {
+  const handleLogout = () => {
     try {
-      await logout();
+      localStorage.removeItem("access_token"); // remove token
+      setUser(null); // clear user context
+      navigate("/login"); // redirect to login
       console.log("🚪 User logged out");
     } catch (err) {
       console.error("Logout failed:", err);
     }
   };
 
-  const displayName = user?.displayName || user?.email;
+  const displayName = user?.first_name
+    ? `${user.first_name} ${user.last_name}`
+    : user?.email;
 
   return (
     <header className="header">

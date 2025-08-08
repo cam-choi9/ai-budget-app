@@ -2,12 +2,13 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from auth.utils import get_current_user
 from models.user import User
 from models.plaid_item import PlaidItem
-from config import settings
+from config import settings, plaid_client
 from sqlalchemy.orm import Session
 from database import get_db
 from datetime import datetime, timedelta
 from models.transaction import Transaction
 from models.account import Account  
+from utils.balance import recalculate_balances_for_user
 
 from plaid import Configuration, ApiClient, Environment
 from plaid.api import plaid_api
@@ -21,23 +22,7 @@ from plaid.model.products import Products
 from plaid.model.transactions_get_request import TransactionsGetRequest
 from plaid.model.transactions_get_request_options import TransactionsGetRequestOptions
 
-
-
 router = APIRouter()
-
-# ✅ Plaid environment setup
-plaid_env = Environment.Production if settings.ENV == "production" else Environment.Sandbox
-
-configuration = Configuration(
-    host=plaid_env,
-    api_key={
-        "clientId": settings.PLAID_CLIENT_ID,
-        "secret": settings.PLAID_SECRET,
-    }
-)
-api_client = ApiClient(configuration)
-plaid_client = plaid_api.PlaidApi(api_client)
-
 
 @router.get("/plaid/create_link_token")
 def create_link_token(current_user: User = Depends(get_current_user)):
@@ -216,12 +201,15 @@ def sync_transactions(user_id: int, db: Session = Depends(get_db)):
         transactions = response["transactions"]
         print("🔍 First transaction:", transactions[0])
 
-
         # Get account metadata
         accounts_response = plaid_client.accounts_get(
             AccountsGetRequest(access_token=access_token)
         )
         accounts_by_id = {acct.account_id: acct for acct in accounts_response.accounts}
+
+        # Get existing account mappings from DB
+        db_accounts = db.query(Account).filter(Account.user_id == user_id).all()
+        account_map = {acct.plaid_account_id: acct for acct in db_accounts}
 
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -234,23 +222,20 @@ def sync_transactions(user_id: int, db: Session = Depends(get_db)):
         if db.query(Transaction).filter_by(transaction_id=transaction_id).first():
             continue
 
-        account_id = tx["account_id"]
-        account_key = str(account_id)
+        plaid_account_id = tx["account_id"]
+        account = account_map.get(plaid_account_id)
+
+        if not account:
+            print(f"⚠️ Skipping transaction; no matching account for {plaid_account_id}")
+            continue  # or optionally: create the account record here
 
         # Set up balances (simple in-memory for now)
-        if account_key not in account_balances:
-            account_balances[account_key] = 0.0
+        if plaid_account_id not in account_balances:
+            account_balances[plaid_account_id] = 0.0
 
-        prev_balance = account_balances[account_key]
+        prev_balance = account_balances[plaid_account_id]
         new_balance = prev_balance - tx["amount"] if tx["amount"] > 0 else prev_balance + abs(tx["amount"])
-        account_balances[account_key] = new_balance
-
-        # Extract account metadata
-        account = accounts_by_id.get(account_id)
-        institution_name = plaid_item.institution_name or "Unknown Bank"
-        account_subtype = str(account.subtype.value) if account and account.subtype else "unknown"
-        account_mask = account.mask if account else "0000"
-        account_name_display = f"{institution_name} • {account_subtype} • ****{account_mask}"
+        account_balances[plaid_account_id] = new_balance
 
         new_tx = Transaction(
             user_id=user_id,
@@ -258,11 +243,12 @@ def sync_transactions(user_id: int, db: Session = Depends(get_db)):
             date=tx["date"],
             item=tx["name"],
             type="expense" if tx["amount"] > 0 else "income",
-            primary_category="Uncategorized",  # placeholder
-            subcategory="Uncategorized",       # placeholder
+            primary_category="Uncategorized",
+            subcategory="Uncategorized",
             amount=tx["amount"],
-            account_name=account_name_display,
-            account_type=account_subtype,
+            account_id=account.id,  # ✅ Key change: link to account table
+            account_name=account.custom_name or account.official_name or "",  # fallback
+            account_type=account.account_type,
             balance_before=prev_balance,
             balance_after=new_balance,
             is_virtual=False,
@@ -271,5 +257,6 @@ def sync_transactions(user_id: int, db: Session = Depends(get_db)):
         inserted_count += 1
 
     db.commit()
+    recalculate_balances_for_user(user_id, db)
     return {"message": f"Inserted {inserted_count} new transactions"}
 
