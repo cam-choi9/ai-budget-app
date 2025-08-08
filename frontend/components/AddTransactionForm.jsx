@@ -1,7 +1,11 @@
-import React from "react";
 import "../styles/AddTransactionForm.css";
 
-export default function AddTransactionForm({ newTx, onChange, onSave }) {
+export default function AddTransactionForm({
+  newTx,
+  onChange,
+  onSave,
+  accounts,
+}) {
   return (
     <div className="add-transaction-card">
       <h2 className="form-title">➕ Add a New Transaction</h2>
@@ -58,27 +62,25 @@ export default function AddTransactionForm({ newTx, onChange, onSave }) {
           placeholder="Subcategory"
         />
 
-        <input
-          className="form-input"
-          name="account_name"
-          value={newTx.account_name}
-          onChange={onChange}
-          placeholder="Account Name"
-        />
-
         <select
           className="form-input"
-          name="account_type"
-          value={newTx.account_type}
+          name="account_id"
+          value={newTx.account_id}
           onChange={onChange}
+          required
+          style={{ minWidth: "300px" }} // ✅ Wider dropdown
         >
-          <option value="">Account Type</option>
-          <option value="checking">Checking</option>
-          <option value="savings">Savings</option>
-          <option value="credit">Credit</option>
-          <option value="cash">Cash</option>
-          <option value="investment">Investment</option>
-          <option value="other">Other</option>
+          <option value="">Select Linked Account</option>
+          {accounts.map((acc) => {
+            const label = acc.custom_name?.trim()
+              ? acc.custom_name
+              : `${acc.institution_name} ${acc.subtype} •••${acc.mask}`;
+            return (
+              <option key={acc.id} value={acc.id}>
+                {label}
+              </option>
+            );
+          })}
         </select>
       </div>
 

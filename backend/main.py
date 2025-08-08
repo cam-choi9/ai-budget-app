@@ -1,14 +1,18 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from database import SessionLocal, engine, Base
+
 from auth.routes import router as auth_router
 from api.plaid import router as plaid_router
+from api.transactions import router as transaction_router
+from api.accounts import router as account_router
+from api.ai import router as ai_router
+
 from config import settings
-from api import transactions
 import sys
 import traceback
 from dotenv import load_dotenv
-from api import ai
+
 
 load_dotenv()
 
@@ -46,7 +50,8 @@ app.add_middleware(
 # ✅ Route setup
 app.include_router(auth_router, prefix="/api")
 app.include_router(plaid_router, prefix="/api")
-app.include_router(transactions.router, prefix="/api")
-app.include_router(ai.router, prefix="/api")
+app.include_router(account_router, prefix="/api")
+app.include_router(transaction_router, prefix="/api")
+app.include_router(ai_router, prefix="/api")
 
 print("📡 Connected to DB:", settings.DATABASE_URL)

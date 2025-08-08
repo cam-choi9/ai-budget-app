@@ -8,11 +8,11 @@ import {
 } from "../services/transactions";
 
 import AddTransactionForm from "../components/AddTransactionForm";
-
 import "../styles/transactions.css";
 
 export default function TransactionsPage() {
   const [transactions, setTransactions] = useState([]);
+  const [accounts, setAccounts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [categorizing, setCategorizing] = useState(false);
@@ -23,34 +23,67 @@ export default function TransactionsPage() {
   const today = new Date().toISOString().split("T")[0];
 
   const [newTx, setNewTx] = useState({
-    user_id: 2, // hardcoded for now
     date: today,
     item: "",
     type: "expense",
     primary_category: "",
     subcategory: "",
     amount: "",
-    account_name: "",
-    account_type: "",
+    account_id: "",
   });
 
-  const loadTransactions = () => {
-    setLoading(true);
-    fetchTransactions(simulationMode)
-      .then(setTransactions)
-      .catch((err) => console.error("Fetch error:", err))
-      .finally(() => setLoading(false));
+  const fetchAccounts = async () => {
+    try {
+      const token = localStorage.getItem("access_token");
+      const res = await fetch("http://localhost:8000/api/plaid/accounts", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      setAccounts(data.accounts || []);
+    } catch (err) {
+      console.error("❌ Failed to fetch accounts:", err);
+    }
+  };
+
+  const loadTransactions = async () => {
+    if (!accounts.length) return;
+
+    const startingBalances = {};
+    accounts.forEach((acc) => {
+      const rawBalance =
+        acc.account_type === "credit"
+          ? acc.balances.current
+          : acc.balances.available;
+      startingBalances[acc.id] = rawBalance;
+    });
+
+    try {
+      setLoading(true);
+      const txData = await fetchTransactions(startingBalances, simulationMode);
+      setTransactions(txData);
+    } catch (err) {
+      console.error("Fetch error:", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
-    loadTransactions();
+    fetchAccounts();
   }, []);
+
+  useEffect(() => {
+    if (accounts.length > 0) {
+      loadTransactions();
+    }
+  }, [accounts, simulationMode]);
 
   const handleSyncClick = async () => {
     try {
       setSyncing(true);
-      await syncTransactions(2); // hardcoded user_id=2
-      loadTransactions(); // refresh after sync
+      await syncTransactions(2);
+      await fetchAccounts(); // refresh accounts too
+      await loadTransactions();
     } catch (err) {
       console.error("Sync failed:", err);
     } finally {
@@ -63,7 +96,7 @@ export default function TransactionsPage() {
       setCategorizing(true);
       const result = await categorizeTransactions();
       alert(`✅ Categorized ${result.updated} transactions`);
-      loadTransactions(); // refresh list
+      await loadTransactions();
     } catch (err) {
       console.error("Categorization failed:", err);
       alert("❌ Categorization failed");
@@ -80,7 +113,7 @@ export default function TransactionsPage() {
         subcategory: editValues.subcategory,
       });
       setEditingId(null);
-      loadTransactions(); // refresh
+      await loadTransactions();
     } catch (err) {
       console.error("Update failed:", err);
     }
@@ -98,20 +131,18 @@ export default function TransactionsPage() {
         return;
       }
 
-      await addTransaction(newTx);
+      await addTransaction(newTx, startingBalances[newTx.account_id]);
       setShowAddForm(false);
       setNewTx({
-        user_id: 2,
         date: today,
         item: "",
         type: "expense",
         primary_category: "",
         subcategory: "",
         amount: "",
-        account_name: "",
-        account_type: "",
+        account_id: "",
       });
-      loadTransactions();
+      await loadTransactions();
     } catch (err) {
       console.error("Failed to add transaction:", err);
     }
@@ -183,15 +214,12 @@ export default function TransactionsPage() {
           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
             <label style={{ fontWeight: 500 }}>Simulation Mode</label>
             <div
-              onClick={() => {
-                setSimulationMode(!simulationMode);
-                setTimeout(() => loadTransactions(), 0);
-              }}
+              onClick={() => setSimulationMode((prev) => !prev)}
               style={{
                 width: "40px",
                 height: "22px",
                 borderRadius: "9999px",
-                backgroundColor: simulationMode ? "#d1d5db" : "#10b981", // ✅ green if ON, gray if OFF
+                backgroundColor: simulationMode ? "#10b981" : "#d1d5db",
                 position: "relative",
                 cursor: "pointer",
                 transition: "background-color 0.3s ease",
@@ -205,7 +233,7 @@ export default function TransactionsPage() {
                   borderRadius: "9999px",
                   position: "absolute",
                   top: "2px",
-                  left: simulationMode ? "2px" : "20px", // ✅ knob moves right when ON
+                  left: simulationMode ? "20px" : "2px",
                   transition: "left 0.3s ease",
                 }}
               />
@@ -220,6 +248,7 @@ export default function TransactionsPage() {
             newTx={newTx}
             onChange={handleInputChange}
             onSave={handleAddTransaction}
+            accounts={accounts}
           />
         </div>
       )}
@@ -280,7 +309,7 @@ export default function TransactionsPage() {
                         {tx.primary_category || "Uncategorized"}
                         {tx.subcategory ? ` › ${tx.subcategory}` : ""}
                       </span>{" "}
-                      • {tx.account_name}
+                      • {tx.account_name || "Unnamed Account"}
                     </div>
                   </>
                 )}

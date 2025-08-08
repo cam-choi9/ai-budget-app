@@ -1,0 +1,44 @@
+.top-spending {
+  width: 100%;
+  max-width: 500px;
+  margin-top: 20px;
+}
+
+.top-spending h3 {
+  font-size: 1.2rem;
+  font-weight: bold;
+  margin-bottom: 16px;
+}
+
+.bar-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.label {
+  width: 160px;
+  font-size: 0.95rem;
+}
+
+.bar-container {
+  flex: 1;
+  background-color: #f0f0f0;
+  height: 14px;
+  border-radius: 7px;
+  position: relative;
+}
+
+.bar-fill {
+  height: 100%;
+  border-radius: 7px;
+  background-color: #ff5722;
+  transition: width 0.3s ease;
+}
+
+.amount {
+  min-width: 60px;
+  font-weight: bold;
+  text-align: right;
+}
