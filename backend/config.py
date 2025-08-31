@@ -13,6 +13,16 @@ class Settings(BaseSettings):
     openai_api_key: str  
     ENV: str  # e.g. "sandbox" or "production"
 
+    @property
+    def SQLALCHEMY_DATABASE_URI(self) -> str:
+        url = self.DATABASE_URL
+        # Render often provides "postgres://"
+        if url.startswith("postgres://"):
+            url = "postgresql+psycopg://" + url[len("postgres://"):]
+        elif url.startswith("postgresql://"):
+            url = "postgresql+psycopg://" + url[len("postgresql://"):]
+        return url
+
     class Config:
         env_file = ".env"
 
