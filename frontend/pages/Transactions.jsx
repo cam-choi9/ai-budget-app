@@ -8,7 +8,7 @@ import {
 } from "../services/transactions";
 
 import AddTransactionForm from "../components/AddTransactionForm";
-import "../styles/transactions.css";
+import "../styles/Transactions.css";
 
 export default function TransactionsPage() {
   const [transactions, setTransactions] = useState([]);

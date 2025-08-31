@@ -17,7 +17,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # ✅ Create the app first
-app = FastAPI()
+app = FastAPI(title = "AI Budget API")
 
 # ✅ Apply error-logging middleware AFTER app is defined
 @app.middleware("http")
@@ -38,14 +38,28 @@ async def log_route_calls(request: Request, call_next):
 # ✅ DB setup
 Base.metadata.create_all(bind=engine)
 
+origins = [
+    "http://localhost:5173",
+    "https://<your-frontend>.onrender.com",
+    "https://<your-custom-domain>",  # if any
+]
+
 # ✅ CORS setup
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.get("/health")
+def health():
+    return {"ok": True}
+
+@app.get("/")
+def root():
+    return {"message": "AI Budget API. See /docs"}
 
 # ✅ Route setup
 app.include_router(auth_router, prefix="/api")
