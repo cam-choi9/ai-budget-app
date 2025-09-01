@@ -34,3 +34,4 @@ A modern personal finance dashboard built with **React**, **FastAPI**, **Postgre
    ```bash
    git clone https://github.com/yourusername/ai-budget-app.git
    ```
+
