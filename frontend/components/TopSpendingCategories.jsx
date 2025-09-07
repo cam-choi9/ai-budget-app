@@ -1,16 +1,22 @@
 import { useEffect, useState } from "react";
 import "../styles/TopSpendingCategories.css";
+import { getJSON, postJSON, putJSON, delJSON } from "../src/lib/api";
 
 function TopSpendingCategories() {
   const [topCategories, setTopCategories] = useState([]);
 
   useEffect(() => {
     const token = localStorage.getItem("access_token");
-    fetch("http://localhost:8000/api/transactions/top-categories", {
+    if (!token) return; // optionally handle unauthenticated state
+
+    getJSON("/api/transactions/top-categories", {
       headers: { Authorization: `Bearer ${token}` },
     })
-      .then((res) => res.json())
-      .then(setTopCategories);
+      .then(setTopCategories)
+      .catch((e) => {
+        console.error("Failed to fetch top categories:", e);
+        setError(e.message);
+      });
   }, []);
 
   const maxValue = Math.max(...topCategories.map((cat) => cat.total), 1);

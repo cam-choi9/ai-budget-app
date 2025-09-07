@@ -9,6 +9,7 @@ import {
 
 import AddTransactionForm from "../components/AddTransactionForm";
 import "../styles/Transactions.css";
+import { getJSON, postJSON, putJSON, delJSON } from "../src/lib/api";
 
 export default function TransactionsPage() {
   const [transactions, setTransactions] = useState([]);
@@ -35,11 +36,11 @@ export default function TransactionsPage() {
   const fetchAccounts = async () => {
     try {
       const token = localStorage.getItem("access_token");
-      const res = await fetch("http://localhost:8000/api/plaid/accounts", {
+      const data = await getJSON("/api/plaid/accounts", {
         headers: { Authorization: `Bearer ${token}` },
       });
-      const data = await res.json();
-      setAccounts(data.accounts || []);
+
+      setAccounts(data.accounts ?? []);
     } catch (err) {
       console.error("❌ Failed to fetch accounts:", err);
     }

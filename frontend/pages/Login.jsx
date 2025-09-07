@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import "../styles/Login.css";
+import { getJSON, postJSON, putJSON, delJSON, postForm } from "../src/lib/api";
 
 function Login() {
   const navigate = useNavigate();
@@ -16,44 +17,25 @@ function Login() {
     setError("");
 
     try {
-      const response = await fetch("http://localhost:8000/api/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-        body: new URLSearchParams({
-          username: email,
-          password: password,
-        }),
+      // 1) login (form-encoded)
+      const data = await postForm("/api/login", {
+        username: email,
+        password: password,
       });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("❌ Login response not OK:", errorText);
-        throw new Error("Login failed");
-      }
-
-      const data = await response.json();
       console.log("✅ Login success:", data);
 
+      // 2) store token
       localStorage.setItem("access_token", data.access_token);
 
-      // ✅ fetch user info
-      const meRes = await fetch("http://localhost:8000/api/me", {
+      // 3) fetch user info with the token
+      const userData = await getJSON("/api/me", {
         headers: {
           Authorization: `Bearer ${data.access_token}`,
         },
       });
 
-      if (!meRes.ok) {
-        const errorText = await meRes.text();
-        console.error("❌ Failed to fetch user info:", errorText);
-        throw new Error("Invalid or expired token");
-      }
-
-      const userData = await meRes.json();
       console.log("✅ User info:", userData);
-
       setUser(userData);
       navigate("/dashboard");
     } catch (err) {

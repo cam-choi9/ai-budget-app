@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import "../styles/Settings.css";
 import { useAuth } from "../context/AuthContext";
+import { getJSON, putJSON } from "../src/lib/api";
 
 function Settings() {
   const [accounts, setAccounts] = useState([]);
@@ -20,15 +21,16 @@ function Settings() {
   const token = localStorage.getItem("access_token");
 
   useEffect(() => {
+    if (!token) return;
+
     // Fetch accounts
-    fetch("http://localhost:8000/api/plaid/accounts", {
+    getJSON("/api/plaid/accounts", {
       headers: { Authorization: `Bearer ${token}` },
     })
-      .then((res) => res.json())
       .then((data) => {
         setAccounts(data.accounts || []);
         const initialNames = {};
-        data.accounts.forEach((acc) => {
+        (data.accounts || []).forEach((acc) => {
           initialNames[acc.id] = acc.custom_name || "";
         });
         setEditingNames(initialNames);
@@ -36,10 +38,9 @@ function Settings() {
       .catch((err) => console.error("❌ Failed to load accounts:", err));
 
     // Fetch user info
-    fetch("http://localhost:8000/api/me", {
+    getJSON("/api/me", {
       headers: { Authorization: `Bearer ${token}` },
     })
-      .then((res) => res.json())
       .then((data) => {
         setUserInfo((prev) => ({
           ...prev,
@@ -56,25 +57,18 @@ function Settings() {
   };
 
   const handleSave = async (id) => {
-    const name = editingNames[id];
+    const name = editingNames[id] ?? "";
     try {
-      const res = await fetch(
-        `http://localhost:8000/api/accounts/${id}/custom_name?name=${encodeURIComponent(
-          name
-        )}`,
-        {
-          method: "PUT",
-          headers: { Authorization: `Bearer ${token}` },
-        }
+      await putJSON(
+        `/api/accounts/${id}/custom_name?name=${encodeURIComponent(name)}`,
+        {}, // backend reads name from the query string; empty JSON body is fine
+        { headers: { Authorization: `Bearer ${token}` } }
       );
-      if (res.ok) {
-        console.log("✅ Saved");
-        setEditingId(null);
-      } else {
-        console.error("❌ Save failed");
-      }
+
+      console.log("✅ Saved");
+      setEditingId(null);
     } catch (err) {
-      console.error("❌ Save error:", err);
+      console.error("❌ Save failed:", err);
     }
   };
 
@@ -84,21 +78,12 @@ function Settings() {
 
   const handleUserUpdate = async () => {
     try {
-      const res = await fetch("http://localhost:8000/api/users/me", {
-        method: "PUT",
+      const updatedUser = await putJSON("/api/users/me", userInfo, {
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(userInfo),
       });
 
-      if (!res.ok) {
-        const err = await res.text();
-        throw new Error(err);
-      }
-
-      const updatedUser = await res.json();
       setUser(updatedUser);
       setUserInfo((prev) => ({ ...prev, password: "" }));
       setUserMessage("✅ User info updated");
