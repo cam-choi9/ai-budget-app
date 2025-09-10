@@ -1,46 +1,55 @@
-from pydantic_settings import BaseSettings
-from pydantic import Field
+from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import Field, AliasChoices
 from plaid import Configuration, ApiClient, Environment
 from plaid.api import plaid_api
 
+
 class Settings(BaseSettings):
+    # Pydantic v2 settings config
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",          # <- don't crash on unexpected env keys
+        case_sensitive=False,
+    )
+
     DATABASE_URL: str
     SECRET_KEY: str
-    ALGORITHM: str
-    ACCESS_TOKEN_EXPIRE_MINUTES: int
-    PLAID_CLIENT_ID: str = Field(..., env="PLAID_CLIENT_ID")
-    PLAID_SECRET: str = Field(..., env="PLAID_SECRET")
-    openai_api_key: str  
-    ENV: str  # e.g. "sandbox" or "production"
+    ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+
+    # Accept either PLAID_SECRET or PLAID_SANDBOX_SECRET
+    PLAID_CLIENT_ID: str = Field(..., validation_alias=AliasChoices("PLAID_CLIENT_ID"))
+    PLAID_SECRET: str = Field(..., validation_alias=AliasChoices("PLAID_SECRET", "PLAID_SANDBOX_SECRET"))
+
+    # Map OPENAI_API_KEY -> openai_api_key attribute
+    openai_api_key: str = Field("", validation_alias=AliasChoices("OPENAI_API_KEY"))  
+
+    # Accept either PLAID_ENV or ENV ("sandbox" / "production")
+    ENV: str = Field("sandbox", validation_alias=AliasChoices("PLAID_ENV", "ENV")) 
 
     @property
     def SQLALCHEMY_DATABASE_URI(self) -> str:
         url = self.DATABASE_URL
-        # Render often provides "postgres://"
+        # normalize to psycopg3 driver
         if url.startswith("postgres://"):
             url = "postgresql+psycopg://" + url[len("postgres://"):]
         elif url.startswith("postgresql://"):
             url = "postgresql+psycopg://" + url[len("postgresql://"):]
         return url
-
-    class Config:
-        env_file = ".env"
+    
 
 settings = Settings()
 
 # Plaid client setup
 plaid_environment = (
-    Environment.Sandbox if settings.ENV == "sandbox" else Environment.Production
+    Environment.Sandbox if settings.ENV.lower() == "sandbox" else Environment.Production
 )
 
 configuration = Configuration(
     host=plaid_environment,
-    api_key={
-        "clientId": settings.PLAID_CLIENT_ID,
-        "secret": settings.PLAID_SECRET,
-    },
+    api_key={"clientId": settings.PLAID_CLIENT_ID, "secret": settings.PLAID_SECRET},
 )
 
 api_client = ApiClient(configuration)
 plaid_client = plaid_api.PlaidApi(api_client)
-

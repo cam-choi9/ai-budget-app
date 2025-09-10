@@ -40,8 +40,7 @@ Base.metadata.create_all(bind=engine)
 
 origins = [
     "http://localhost:5173",
-    "https://<your-frontend>.onrender.com",
-    "https://<your-custom-domain>",  # if any
+    "https://ai-budget-app-frontend.onrender.com",    
 ]
 
 # ✅ CORS setup

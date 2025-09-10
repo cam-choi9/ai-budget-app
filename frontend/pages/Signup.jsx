@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/Signup.css";
+import { postJSON } from "../src/lib/api";
 
 function Signup() {
   const navigate = useNavigate();
@@ -26,30 +27,18 @@ function Signup() {
       return;
     }
 
-    // FastAPI implementation
     try {
-      const response = await fetch("http://localhost:8000/signup", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email,
-          password,
-          first_name: firstName,
-          last_name: lastName,
-        }),
+      await postJSON("/api/signup", {
+        email,
+        password,
+        first_name: firstName,
+        last_name: lastName,
       });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.detail || "Signup failed");
-      }
 
       navigate("/login");
     } catch (err) {
+      console.error("Signup failed:", err);
       setError(err.message || "Failed to create account. Please try again.");
-      console.error("Signup failed: ", err);
     }
   };
 

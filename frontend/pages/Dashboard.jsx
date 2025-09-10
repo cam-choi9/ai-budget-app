@@ -6,6 +6,7 @@ import GreetingHeader from "../components/GreetingHeader";
 import SummaryRow from "../components/SummaryRow";
 import AccountsRow from "../components/AccountsRow";
 import "../styles/Dashboard.css";
+import { getJSON, postJSON, putJSON, delJSON } from "../src/lib/api";
 
 function Dashboard() {
   const navigate = useNavigate();
@@ -18,11 +19,11 @@ function Dashboard() {
     setRefreshing(true);
     try {
       const token = localStorage.getItem("access_token");
-      const accRes = await fetch("http://localhost:8000/api/plaid/accounts", {
+
+      const accData = await getJSON("/api/plaid/accounts", {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      const accData = await accRes.json();
       console.log("🔁 Refreshed Accounts:", accData);
       setAccounts(accData.accounts || []);
     } catch (err) {
@@ -42,16 +43,13 @@ function Dashboard() {
 
     async function fetchUserAndAccounts() {
       try {
-        // Fetch user info
-        const res = await fetch("http://localhost:8000/api/me", {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("access_token")}`,
-          },
+        const token = localStorage.getItem("access_token");
+
+        const userData = await getJSON("/api/me", {
+          headers: { Authorization: `Bearer ${token}` },
         });
 
-        const text = await res.text();
-        if (!res.ok) throw new Error("Token invalid or expired");
-        const userData = JSON.parse(text);
+        // save user
         setUser(userData);
 
         await fetchAccounts();
@@ -73,30 +71,27 @@ function Dashboard() {
     try {
       const token = localStorage.getItem("access_token");
 
-      const res = await fetch(
-        "http://localhost:8000/api/plaid/exchange_public_token",
+      // Exchange the public_token for access_token on the backend
+      const data = await postJSON(
+        "/api/plaid/exchange_public_token",
         {
-          method: "POST",
+          public_token,
+          metadata, // keep if your backend reads/records it
+        },
+        {
           headers: {
-            "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ public_token, metadata }), // ✅ ensure metadata is included
         }
       );
 
-      if (!res.ok) throw new Error("Token exchange failed");
-
-      const data = await res.json();
       console.log("✅ Successfully exchanged public_token:", data);
       alert(`Bank account linked successfully! (${data.institution_name})`);
 
       // ✅ Refetch accounts
-      const accRes = await fetch("http://localhost:8000/api/plaid/accounts", {
+      const accData = await getJSON("/api/plaid/accounts", {
         headers: { Authorization: `Bearer ${token}` },
       });
-
-      const accData = await accRes.json();
       setAccounts(accData.accounts || []);
     } catch (err) {
       console.error("❌ Failed to exchange Plaid token", err);

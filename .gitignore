@@ -16,6 +16,9 @@ dist-ssr
 .env.production
 /backend/.env
 backend/venv
+/frontend/chatGPT-conversation.md
+/backend/practice.py
+/frontend/practice.jsx
 *.pyc
 __pycache__/
 

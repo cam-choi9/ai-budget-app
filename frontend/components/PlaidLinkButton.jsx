@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { getJSON, postJSON, putJSON, delJSON } from "../src/lib/api";
 
 function PlaidLinkButton({ onSuccessCallback }) {
   const [linkToken, setLinkToken] = useState(null);
@@ -6,15 +7,12 @@ function PlaidLinkButton({ onSuccessCallback }) {
   useEffect(() => {
     async function fetchLinkToken() {
       try {
-        const res = await fetch(
-          "http://localhost:8000/api/plaid/create_link_token",
-          {
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem("access_token")}`,
-            },
-          }
-        );
-        const data = await res.json();
+        const data = await getJSON("/api/plaid/create_link_token", {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+          },
+        });
+        // backend returns { link_token: "..." }
         setLinkToken(data.link_token);
       } catch (err) {
         console.error("Error fetching link token:", err);

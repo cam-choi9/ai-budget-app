@@ -1,6 +1,6 @@
 # api/transactions.py
 from sqlalchemy import func
-from fastapi import APIRouter, Depends, Body, HTTPException
+from fastapi import APIRouter, Depends, Body, HTTPException, Request
 from sqlalchemy.orm import Session
 from database import get_db
 from models.transaction import Transaction
@@ -14,58 +14,84 @@ from models.user import User
 router = APIRouter()
 
 @router.post("/transactions")
-def get_transactions(
-    payload: Dict[str, Any] = Body(...),
+async def get_transactions(  # ← async because we await request.body()
+    request: Request,        # ← lets us log the raw incoming HTTP body
+    payload: Any = Body(...),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
-    include_virtual: bool = payload.get("include_virtual", False)
-    starting_balances: dict = payload.get("starting_balances", {})
-
-    print("✅ Received starting_balances:", starting_balances)
-
+    # --- Debug logs to see exactly what the server received ---
+    raw_bytes = await request.body()
+    print("🔎 RAW BODY BYTES:", raw_bytes)
     try:
-        # ✅ Step 1: Always recalculate REAL transactions
+        print("🔎 RAW BODY TEXT:", raw_bytes.decode("utf-8"))
+    except Exception:
+        pass
+    print("🔎 CONTENT-TYPE:", request.headers.get("content-type"))
+    print("🔎 PYTHON TYPE(payload):", type(payload).__name__, "VALUE:", payload)
+
+    # --- Normalize to a dict (fix double-encoded JSON) ---
+    if isinstance(payload, (bytes, bytearray)):
+        try:
+            payload = json.loads(payload.decode("utf-8"))
+        except Exception:
+            raise HTTPException(status_code=400, detail="Invalid JSON bytes body")
+    elif isinstance(payload, str):
+        try:
+            payload = json.loads(payload)  # handle "{\"a\":1}" → {"a":1}
+            print("🔧 Fixed double-encoded payload → dict")
+        except Exception:
+            raise HTTPException(status_code=400, detail="Invalid JSON string body")
+    elif not isinstance(payload, dict):
+        raise HTTPException(status_code=400, detail="Body must be a JSON object")
+
+    include_virtual: bool = bool(payload.get("include_virtual", False))
+
+    raw_balances: Dict[str, float] = payload.get("starting_balances", {}) or {}
+    starting_balances: Dict[int, float] = {}
+    for k, v in raw_balances.items():
+        try:
+            starting_balances[int(k)] = float(v)
+        except (TypeError, ValueError):
+            pass
+
+    print("✅ starting_balances (int keys):", starting_balances)
+    
+    try:
         real_balances = recalculate_balances_for_user(
             user_id=current_user.id,
             db=db,
             starting_balances=starting_balances,
-            include_virtual=False  # Only real transactions
+            include_virtual=False,
         )
-
-        # ✅ Step 2: Recalculate VIRTUAL transactions on top of real balances
         if include_virtual:
             recalculate_virtual_transactions_for_user(
                 user_id=current_user.id,
                 db=db,
-                base_balances=real_balances
+                base_balances=real_balances,
             )
-
     except Exception as e:
         print("❌ Failed to recalculate balances:", str(e))
 
-    # ✅ Step 3: Fetch transactions
     query = (
         db.query(Transaction)
         .filter(Transaction.user_id == current_user.id)
         .outerjoin(Account)
         .order_by(Transaction.date.desc())
     )
-
     if not include_virtual:
         query = query.filter(Transaction.is_virtual == False)
 
-    transactions = query.all()
+    transactions: List[Transaction] = query.all()
 
-    # ✅ Step 4: Format response
     result = []
     for tx in transactions:
         result.append({
             "id": tx.id,
             "item": tx.item,
             "type": tx.type,
-            "date": tx.date,
-            "amount": tx.amount,
+            "date": tx.date,  # FastAPI will serialize date
+            "amount": float(tx.amount) if hasattr(tx.amount, "__float__") else tx.amount,
             "primary_category": tx.primary_category,
             "subcategory": tx.subcategory,
             "balance_before": tx.balance_before,
@@ -75,11 +101,8 @@ def get_transactions(
                 tx.account.custom_name if tx.account and tx.account.custom_name
                 else tx.account_name
             ),
-            "account_type": (
-                tx.account.account_type if tx.account else tx.account_type
-            ),
+            "account_type": (tx.account.account_type if tx.account else tx.account_type),
             "tags": tx.tags,
-            "transaction_id": tx.transaction_id,
         })
 
     return result
