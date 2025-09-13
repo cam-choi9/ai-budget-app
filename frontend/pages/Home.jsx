@@ -143,11 +143,6 @@ export default function Home() {
               {content.hero.secondary}
             </a>
           </div>
-          <ul className="hero__facts" aria-label="Tech stack highlights">
-            <li>FastAPI + React</li>
-            <li>Plaid Integration</li>
-            <li>PostgreSQL</li>
-          </ul>
         </div>
       </header>
 

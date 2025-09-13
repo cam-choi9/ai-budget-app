@@ -27,16 +27,31 @@ body{margin:0;background:linear-gradient(180deg, #FFFFFF 10%, #EBF9E8 23%, #E2FF
 .nav__links a{color:var(--fg);text-decoration:none;opacity:0.85}
 .nav__links a:hover{opacity:1}
 
+
 /* Hero */
-.hero{display:grid;grid-template-columns:1.15fr 0.85fr;gap:44px;align-items:center;padding:72px 20px 40px}
-.hero--center{display:flex;flex-direction:column;align-items:center;text-align:center;gap:16px}
-.hero--center .hero__cta{display:flex;gap:12px;margin:24px 0 12px;justify-content:center}
-.hero--center .hero__facts{display:flex;gap:14px;list-style:none;padding:0;margin:18px 0 0;color:var(--muted);font-size:13px;justify-content:center}
-.hero__facts li{background:#FFFFFF;border:1px solid var(--line);padding:6px 12px;border-radius:15px}
-.hero__title{font-size:60px;line-height:1.1;margin:0 0 32px}
-.hero__subtitle{margin:0 0 100px;color:var(--muted);font-size:20px}
+/* Spacing control (override these on .hero--center)
+   --space-title-subtitle: space between title → subtitle;
+   --space-subtitle-cta:   space between subtitle → buttons;
+   --space-cta-facts:      space between buttons → tech bubbles;
+   --space-hero-bottom:    space between tech bubbles → feature image (via hero padding-bottom)
+*/
+.hero{display:grid;grid-template-columns:1.15fr 0.85fr;gap:44px;align-items:center;padding:72px 20px var(--space-hero-bottom, 40px)}
+.hero--center{display:flex;flex-direction:column;align-items:center;text-align:center;/* spacing vars with sensible defaults */
+  --space-title-subtitle: 32px;
+  --space-subtitle-cta: 64px;
+  --space-cta-facts: 64px;
+  --space-hero-bottom: 120px;
+}
+/* Center inner content container so children (buttons, bubbles) don't drift left */
+.hero--center .hero__copy{display:flex;flex-direction:column;align-items:center}
+.hero--center .hero__cta{display:flex;gap:12px;justify-content:center;align-self:center;margin:var(--space-subtitle-cta, 24px) 0 0}
+.hero--center .hero__facts{display:flex;gap:14px;list-style:none;padding:0;margin:var(--space-cta-facts, 18px) 0 0;color:var(--muted);font-size:13px;justify-content:center}
+/* Bubble chips */
+.hero__facts li{display:inline-flex;align-items:center;background:#FFFFFF;border:1px solid var(--line);padding:8px 14px;border-radius:9999px}
+.hero__title{font-size:60px;line-height:1.1;margin:0 0 var(--space-title-subtitle, 18px)}
+.hero__subtitle{margin:0;color:var(--muted);font-size:18px}
 .hero__cta{display:flex;gap:12px;margin:18px 0 10px}
-.hero__facts{display:flex;gap:14px;list-style:none;padding:0;margin:100px 0 0;color:var(--muted);font-size:5px}
+.hero__facts{display:flex;gap:14px;list-style:none;padding:0;margin:12px 0 0;color:var(--muted);font-size:13px}
 .hero__art{display:none}
 
 /* Cards & Demo */
