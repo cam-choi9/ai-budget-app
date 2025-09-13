@@ -1,4 +1,6 @@
+// App.jsx
 import { Routes, Route, Navigate } from "react-router-dom";
+import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import Dashboard from "./pages/Dashboard";
@@ -7,12 +9,11 @@ import Settings from "./pages/Settings";
 import PrivateRoute from "./components/PrivateRoute";
 import DashboardLayout from "./layouts/DashboardLayout";
 
-// console.log("🔥 Plaid Client ID:", import.meta.env.VITE_PLAID_CLIENT_ID);
-
 function App() {
   return (
     <Routes>
       {/* Public Routes */}
+      <Route path="/" element={<Home />} />
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
 
@@ -51,7 +52,7 @@ function App() {
       />
 
       {/* Default fallback route */}
-      <Route path="*" element={<Navigate to="/login" />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }
